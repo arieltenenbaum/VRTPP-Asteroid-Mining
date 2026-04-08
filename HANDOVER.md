@@ -230,7 +230,6 @@ Commit **frequently** — after each meaningful change, not just at the end of a
 ### When to commit:
 - After each code change Claude makes (before you run it)
 - After a debug attempt — whether it worked or not
-- After each MILP-NLP iteration produces a new result
 - Any time you want to "save" the current state before trying something risky
 
 ### Commit commands:
