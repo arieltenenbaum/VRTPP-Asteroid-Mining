@@ -215,8 +215,7 @@ jupyter lab VRTPP_PR_Optimization.ipynb
 | File | Description |
 |---|---|
 | `VRTPP_PR_Optimization.ipynb` | Main implementation (Python + Gurobi) |
-| `VRTPP_PR_Optimization.m` | MATLAB reference implementation |
-| `HANDOVER.md` | This document — update every session |
+| `HANDOVER.md` | This document — update with every commit |
 | `.gitignore` | Ignores checkpoints, .DS_Store, Gurobi logs |
 
 **The source paper PDF is NOT in this repo** (copyright protected). Keep it locally at:  
@@ -224,21 +223,35 @@ jupyter lab VRTPP_PR_Optimization.ipynb
 
 ---
 
-## 12. How to Update This Document
+## 12. Version Control Strategy
 
-After every debugging/development session, add an entry to Section 8 (Change Log) with:
-```
-### Session: YYYY-MM-DD
-**What was changed:** [list each change and which cell]
-**Why:** [the reason]
-**Result:** [did it help? new errors?]
-**Status at end:** [solution matches paper? still broken? partially working?]
-```
+Commit **frequently** — after each meaningful change, not just at the end of a session. The goal is that every commit represents a recoverable, meaningful state so you can roll back to any point between iterations.
 
-Then commit:
+### When to commit:
+- After each code change Claude makes (before you run it)
+- After a debug attempt — whether it worked or not
+- After each MILP-NLP iteration produces a new result
+- Any time you want to "save" the current state before trying something risky
+
+### Commit commands:
 ```bash
 cd ~/Downloads/VRTPP-Asteroid-Mining
-git add -A
-git commit -m "Session YYYY-MM-DD: [one-line summary]"
+git add VRTPP_PR_Optimization.ipynb HANDOVER.md
+git commit -m "short description of what changed"
 git push origin main
+```
+
+### To roll back to a previous state:
+```bash
+git log --oneline          # see all commits
+git checkout <hash> -- VRTPP_PR_Optimization.ipynb   # restore a specific file
+```
+
+### Update HANDOVER.md with every commit — add to Section 8:
+```
+### YYYY-MM-DD — [short label, e.g. "debug MILP mass constraints"]
+**Changed:** Cell XX — [what was changed]
+**Why:** [reason]
+**Result:** [output / error / improvement]
+**Status:** [working / broken / partial]
 ```
