@@ -23,7 +23,7 @@ The core algorithmic structure is identical to the paper:
 | Mass ratio model | Tsiolkovsky rocket equation | Same |
 | Lambert solver | Universal variable method | Same |
 | Earth dv model | Hyperbolic excess velocity (Eq. 48) | Same |
-| Convergence criterion | Active-arc dv change / max(dv) ≤ εc | Same (εc = 0.001) |
+| Convergence criterion | dv change / max(dv) ≤ εc = 0.001 | Same strict criterion + soft fallback (see §3.3) |
 | Number of virtual base nodes | n_bv = 3 | Same |
 | Mission parameters | m_max=20,000 kg, Isp=3000s, q=10 kg | Same |
 
@@ -57,7 +57,7 @@ Our implementation identified and corrected 13 bugs relative to a naive reading 
 
 **Our model:** For the first time an arc is seen (no previous iteration to warm-start from), we scan `T_t ∈ {1, 3, 5, 7, 9, 11, 13}` TU at `T_d = T_d_min` and use the lowest-dv candidate as the NLP starting point. This costs 7 Lambert solves per first-seen arc and avoids landing in a high-dv local minimum for eccentric bodies.
 
-**Why this matters:** For FG3→Bennu (FG3 eccentricity e=0.35), the Hohmann warm-start at T_t≈3.6 TU lands in a local minimum at 11.43 km/s. The paper finds 7.32 km/s at T_t≈7.06 TU. The T_t scan finds a basin near 7 TU and the NLP converges much closer to the paper's value.
+**Why this matters:** For FG3→Bennu (FG3 eccentricity e=0.35), the Hohmann warm-start at T_t≈3.6 TU lands in a local minimum at 11.43 km/s. The paper's warm-start finds the correct basin and converges to 7.32 km/s at T_t≈7.06 TU. Our T_t scan finds a basin near 7 TU and the NLP converges much closer to the paper's value than the naive Hohmann start would.
 
 ### 3.3 Convergence Criterion
 
@@ -65,11 +65,15 @@ Our implementation identified and corrected 13 bugs relative to a naive reading 
 
 **Our model:** Same strict criterion, plus a soft fallback: if the route is unchanged for 5+ consecutive iterations AND dv change < 0.05, declare convergence. This handles the case where the NLP oscillates between two genuine local minima of similar cost (e.g. Earth→1989 ML at ~12.1 vs ~12.7 km/s), which would otherwise prevent convergence despite a physically stable solution.
 
-### 3.4 Asteroid Wait Time Cap
+### 3.4 NLP Bounds
 
-**Paper:** Only specifies a lower bound `T_d ≥ T_arrival + T_service` (Sec. IV.B.2). No upper bound on asteroid stay duration.
+**Paper (Sec. IV.B.2):** Only specifies a lower bound on departure time `T_d ≥ T_arrival + T_service` and a small positive lower bound on transfer time. No upper bounds stated.
 
-**Our model:** `T_d_max = T_d_min + 5.0 TU` (~8 months). Without this, the NLP occasionally finds low-dv windows requiring 15–30 TU stays at asteroids, which are physically valid but operationally unrealistic. This is a workaround for missing time-window constraints and is a planned future feature.
+**Our model adds two upper bounds:**
+- `T_d_max = T_d_min + 5.0 TU` (~8 months max wait at each body). Without this, the NLP occasionally finds low-dv windows requiring 15–30 TU stays at asteroids, which are physically valid but operationally unrealistic. This is a workaround for missing time-window constraints (planned future feature).
+- `T_t_max = 30.0 TU` on transfer time. This is a soft sanity cap; no transfer in the problem approaches it in practice.
+
+These bounds can change the solution relative to the paper's unconstrained NLP, particularly the T_d cap, which prevents the solver from finding cheap transfer windows that require long asteroid stays.
 
 ### 3.5 Hardware
 
@@ -94,9 +98,9 @@ Our implementation identified and corrected 13 bugs relative to a naive reading 
 
 Our model finds a route with a substantially higher objective value (≈18.93 vs ≈9.4), visiting 3 mining asteroids instead of 1. The paper's algorithm is an iterative local search and is **not guaranteed to find the global optimum** — it finds the first locally stable solution given its warm-start strategy. Our bug fixes and improved warm-start allow the MILP to correctly price more routes and the NLP to avoid suboptimal local minima.
 
-### Why the paper finds a 1-asteroid route
+### Why our model finds a different route than the paper
 
-The paper's warm-start lands FG3→Bennu in a 11.43 km/s local minimum (vs the true 7.32 km/s). With FG3 routes mispriced by 4.1 km/s, the MILP correctly drops them and explores alternatives. The best alternative under those constraints is a 1-spacecraft Earth→FG3→Bennu→Earth route — but since FG3→Bennu is overpriced, that route is never selected. The paper's final route reflects the best solution given its NLP's warm-start limitations.
+The paper correctly finds FG3→Bennu at 7.32 km/s and reports the 1-spacecraft Earth→FG3→Bennu→Earth route. Our model, with bug fixes applied and the full asteroid candidate set, finds a 3-asteroid route with a higher objective. The paper's iterative algorithm is not guaranteed to find the global optimum — it converges to the first locally stable solution. With 13 bugs corrected, our MILP prices all routes more accurately and the NLP avoids suboptimal local minima, enabling it to find a better solution.
 
 ---
 
@@ -161,7 +165,13 @@ The paper's warm-start lands FG3→Bennu in a 11.43 km/s local minimum (vs the t
 
 ---
 
-## 7. Summary
+## 7. Scope of This Replication
+
+This notebook replicates the paper's **case study** (Section V.A): the single mission scenario with the given asteroid set and parameters. It does not replicate the paper's **scalability experiments** (Section V.B), which run the algorithm over many randomly generated problem instances to characterize runtime and solution quality at scale. Extending to the full experimental campaign is a potential future direction.
+
+---
+
+## 8. Summary
 
 Our model is a corrected and extended implementation of the paper's VRTPP-PR algorithm. The 13 bug fixes and improved NLP warm-start allow the MILP-NLP loop to correctly price routes and find solutions the paper's implementation missed. Our current best result (obj≈18.93, 3 mining asteroids) substantially outperforms the paper's reported result (obj≈9.4, 1 mining asteroid).
 
