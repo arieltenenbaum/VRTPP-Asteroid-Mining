@@ -36,9 +36,11 @@ The core algorithmic structure is identical to the paper:
 
 **Paper:** The paper initializes each segment's NLP from the Hohmann transfer time `T_t_hoh = π√(a_transfer³/μ)`. For near-circular, low-eccentricity asteroids this is a reasonable starting point. The paper does not describe how it handles multimodal delta-v landscapes.
 
-**Our model:** For the first time an arc is seen (no previous iteration to warm-start from), we scan `T_t ∈ {1, 3, 5, 7, 9, 11, 13}` TU at `T_d = T_d_min` and use the lowest-dv candidate as the NLP starting point. This costs 7 Lambert solves per first-seen arc and avoids landing in a high-dv local minimum for eccentric bodies.
+**Our model (Fix 13):** For the first time an arc is seen (no previous iteration to warm-start from), we scan `T_t ∈ {1, 3, 5, 7, 9, 11, 13}` TU at `T_d = T_d_min` and use the lowest-dv candidate as the NLP starting point. This costs 7 Lambert solves per first-seen arc and avoids landing in a high-dv local minimum for eccentric bodies.
 
-**Why this matters:** For FG3→Bennu (FG3 eccentricity e=0.35), the Hohmann warm-start at T_t≈3.6 TU lands in a local minimum at 11.43 km/s. The paper's warm-start finds the correct basin and converges to 7.32 km/s at T_t≈7.06 TU. Our T_t scan finds a basin near 7 TU and the NLP converges much closer to the paper's value than the naive Hohmann start would.
+**Fix 14 (multi-start, added 2026-04-15):** Fix 13 alone is insufficient for Earth→FG3. The scan evaluates discrete T_t values and picks the cheapest raw dv — but cheapest raw dv ≠ best local minimum reachable from that point. At T_d=0, T_t=3 is cheaper than T_t=7, so the scan picks T_t=3, and the NLP converges to 10.48 km/s (wrong basin). The paper starts from T_t_hoh≈3.27 TU, which lands just past the ridge between the two dv basins — the gradient there points toward the T_t≈6.26 minimum (9.51 km/s). Fix 14 runs trust-constr from **both** the scan's best candidate and T_t_hoh when no prior warm-start exists, keeping the lower result. Cost: at most one extra NLP solve per first-seen arc.
+
+**Why Fix 13 works for other arcs:** For FG3→Bennu (FG3 eccentricity e=0.35), the Hohmann warm-start at T_t≈3.6 TU lands in a local minimum at 11.43 km/s. The T_t scan finds a basin near 7 TU and the NLP converges to 7.32 km/s. Fix 14 doesn't change this arc (scan already wins).
 
 ### 3.3 Convergence Criterion
 
@@ -133,7 +135,7 @@ It tests this three ways for the paper's route (Earth → FG3 → Bennu → Eart
 
 **Part 2: FG3→Bennu and Bennu→Earth passed.** Our T_t scan warm-start finds the right valley for these two arcs. The concern from earlier sessions — that FG3→Bennu was permanently stuck at 11.43 km/s — is resolved. With the correct arrival-time context (Earth→FG3 arriving at ~6.35 TU), the scan lands in the right basin.
 
-**Part 2: Earth→FG3 failed.** Our scan at T_d_min=0 picks T_t≈3 as the cheapest candidate at that point, and the solver refines it to 10.48 km/s. The paper's basin is at T_t≈6.26 — the scan evaluates T_t=7 but finds T_t=3 cheaper at the scan's fixed T_d=0. This is a warm-start gap for the first arc of any route starting from Earth.
+**Part 2: Earth→FG3 failed** (Fix 13 only). Our scan at T_d_min=0 picks T_t≈3 as the cheapest candidate at that point, and the solver refines it to 10.48 km/s. The paper's basin is at T_t≈6.26 — the scan evaluates T_t=7 but finds T_t=3 cheaper at the scan's fixed T_d=0. Root cause: T_t_hoh≈3.27 sits just past the ridge between the two basins; the scan's T_t=3 is already inside the wrong basin. Fixed by Fix 14 (multi-start); see Part 4.
 
 **Part 1: Grid found cheaper values than the paper for two arcs.** The grid (which does not respect mission sequencing constraints) found Earth→FG3 at 6.71 km/s and Bennu→Earth at 7.54 km/s — both cheaper than the paper. These windows exist at later departure times (T_d=4.0 and T_d=21.5), but using them would shift all downstream departure-time windows, making the overall route more or less expensive depending on the combination. The paper's values are not the cheapest possible for each arc in isolation — they are the values that work best as a sequence.
 
@@ -166,7 +168,7 @@ Our current best route is Earth→Anteros→Bennu→1989 ML→Earth. This route 
 | Limitation | Impact | Planned Fix |
 |---|---|---|
 | T_d_max = T_d_min + 5 TU cap | May miss cheap windows requiring longer asteroid stays | Time-window constraints (future) |
-| Earth→X warm-start picks wrong T_t basin | Earth→FG3 converges to 10.48 km/s instead of 9.51 km/s; affects any route that starts with a long-T_t transfer from Earth | Under investigation; does not affect current route |
+| ~~Earth→X warm-start picks wrong T_t basin~~ | ~~Earth→FG3 converges to 10.48 km/s instead of 9.51 km/s~~ | **Fixed by Fix 14 (multi-start)** — Experiment 3 Part 4 verifies |
 | Soft convergence threshold (0.05) | May declare convergence with slight NLP oscillation | Acceptable given Bug 12 analysis |
 | No multi-objective optimization | Cannot explore profit/fuel trade-off surface | Future feature |
 
@@ -180,6 +182,6 @@ This notebook replicates the paper's **case study** (Section V.A): the single mi
 
 ## 8. Summary
 
-Our model is a corrected and extended implementation of the paper's VRTPP-PR algorithm. The 13 bug fixes and improved NLP warm-start allow the MILP-NLP loop to correctly price routes and find solutions the paper's implementation missed. Our current best result (obj≈18.93, 3 mining asteroids) substantially outperforms the paper's reported result (obj≈9.4, 1 mining asteroid).
+Our model is a corrected and extended implementation of the paper's VRTPP-PR algorithm. The 14 bug fixes and improved NLP warm-start allow the MILP-NLP loop to correctly price routes and find solutions the paper's implementation missed. Our current best result (obj≈18.93, 3 mining asteroids) substantially outperforms the paper's reported result (obj≈9.4, 1 mining asteroid).
 
-Experiment 3 confirmed that our NLP solver and orbital mechanics are correct: given the paper's exact starting points, our solver reproduces all three paper arc costs to within 0.1%. The remaining warm-start gap (Earth→FG3) does not affect our current route. The next validation step is Experiment 1 (mass feasibility check) to confirm the physical constraints of our solution are satisfied.
+Experiment 3 confirmed that our NLP solver and orbital mechanics are correct: given the paper's exact starting points, our solver reproduces all three paper arc costs to within 0.1%. Fix 14 (multi-start) closes the remaining Earth→FG3 warm-start gap — Part 4 of Experiment 3 verifies all three arcs now match the paper without needing the paper's exact seed. The next validation step is Experiment 1 (mass feasibility check) to confirm the physical constraints of our solution are satisfied.
