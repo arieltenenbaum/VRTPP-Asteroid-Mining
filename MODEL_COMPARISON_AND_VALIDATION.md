@@ -31,27 +31,8 @@ The core algorithmic structure is identical to the paper:
 
 ## 3. Differences Between Our Model and the Paper
 
-### 3.1 Bugs Fixed (not present in paper's implementation)
 
-Our implementation identified and corrected 13 bugs relative to a naive reading of the paper's equations. The paper does not describe these issues because they are implementation-level details not covered in the mathematical formulation.
-
-| # | Bug | Impact |
-|---|---|---|
-| 1 | Mass constraint cargo term `y[k,i]` on wrong legs | CRITICAL — infeasible mass solutions |
-| 2 | `y[k,i]` linearization activated on any outgoing arc | SIGNIFICANT — wrong MILP objective |
-| 3 | L-BFGS-B with artificial 3 TU departure cap | SIGNIFICANT — NLP missed good windows |
-| 4 | Convergence denominator was Frobenius norm, not max element | MODERATE — wrong threshold scaling |
-| 5 | Hard constraint forcing 1 spacecraft | MODELING — prevented multi-SC solutions |
-| 6 | `res.success=False` blocked valid NLP solutions | SIGNIFICANT — discarded good trajectories |
-| 7 | Same-body pairs given `mr=0.999` in initialization | CRITICAL — corrupted MILP costs from iteration 1 |
-| 8 | Same-body arcs created as MILP variables | CRITICAL — spurious zero-cost hops |
-| 9 | Convergence check on stale off-route arcs | MODERATE — delayed/prevented convergence |
-| 10 | `T_service` incorrectly applied at Earth departure | MODELING — wrong departure timing |
-| 11 | Route comparison order-sensitive (phantom route changes) | ALGORITHMIC — wasted iterations |
-| 12 | No soft convergence fallback for NLP oscillation | ALGORITHMIC — algorithm ran all 50 iterations without converging |
-| 13 | NLP iteration-1 warm-start defaulted to Hohmann T_t | SIGNIFICANT — wrong local minimum for eccentric arcs |
-
-### 3.2 NLP Warm-Start Strategy
+### 3.1 NLP Warm-Start Strategy
 
 **Paper:** The paper initializes each segment's NLP from the Hohmann transfer time `T_t_hoh = π√(a_transfer³/μ)`. For near-circular, low-eccentricity asteroids this is a reasonable starting point. The paper does not describe how it handles multimodal delta-v landscapes.
 
