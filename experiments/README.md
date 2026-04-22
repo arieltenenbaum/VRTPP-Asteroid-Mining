@@ -9,7 +9,7 @@ Comparison between the paper (Choi & Ho, AIAA SciTech 2026) and our extended mod
 | Column | Description |
 |--------|-------------|
 | `model` | `paper` or `our_model` |
-| `n_r` | Number of spacecraft (rockets) |
+| `n_r` | Number of refueling asteroids |
 | `n_m` | Number of candidate mining asteroids |
 | `iterations_min/max/mean` | MILP-NLP iterations until convergence across all problems in the batch |
 | `time_min/max/mean_sec` | Wall-clock computation time in seconds |
