@@ -164,21 +164,40 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 ## Workflow Constraints
 
 - **Gurobi runs locally only** — license tied to local machine
-- Code must be run in Jupyter, outputs copied manually for analysis
+- Code must be run in Jupyter on the licensed machine; outputs are captured automatically (see below)
 - `main` branch is the stable reference; `bang-ahn-grid-init` is experimental
+
+### Running Notebooks — use `run_notebook.sh`
+
+**Every time a notebook needs to be executed**, use the script at the repo root instead of manually running cells and copy-pasting output:
+
+```bash
+cd ~/Downloads/VRTPP-Asteroid-Mining
+./run_notebook.sh                           # runs VRTPP_PR_Optimization.ipynb
+./run_notebook.sh VRTPP-PaperModel.ipynb    # runs a specific notebook
+```
+
+This produces two files that Claude can read directly:
+
+| File | Contents |
+|------|----------|
+| `<notebook>_executed.ipynb` | Full notebook JSON with all cell outputs embedded |
+| `<notebook>_outputs.txt` | Plain text of every cell's output (fast to read) |
+
+These files are gitignored. After running, tell Claude the execution is done — Claude will read `_outputs.txt` (or the executed notebook) rather than asking you to paste anything.
 
 ---
 
 ## Open Questions / Next Steps
 
 1. **Main branch — faithful paper replication**  
-   `VRTPP_PaperModel.ipynb` should replicate the paper's formulation, parameters, and Hohmann-based initialization exactly. The paper's setup uses n_bv = 3 (Table 2); a 1-spacecraft solution is what the paper's optimizer returns for the case study, not a forced constraint. Goal: reproduce Table 5 (Earth → 1996 FG3 → 101955 Bennu → Earth, obj ≈ 9.28, ~10 iterations).
+   `VRTPP_PaperModel.ipynb` should replicate the paper's formulation, parameters, and Hohmann-based initialization exactly. The paper's setup uses n_bv = 3 (Table 2); a 1-spacecraft solution is what the paper's optimizer returns for the case study, not a forced constraint. Goal: reproduce Table 5 (Earth → 1996 FG3 → 101955 Bennu → Earth, obj ≈ 9.28, ~10 iterations). **Run using `run_notebook.sh VRTPP-PaperModel.ipynb`.**
 
 2. **bang-ahn-grid-init — validate and justify the modified initialization**  
-   Demonstrate that the Bang-Ahn adaptive grid is a conceptually sound and well-motivated replacement for the paper's Hohmann-based initialization. The goal is to produce a research justification — why the initialization was changed, what problem it solves, and what improvement it provides — suitable for inclusion in a research paper.
+   Demonstrate that the Bang-Ahn adaptive grid is a conceptually sound and well-motivated replacement for the paper's Hohmann-based initialization. The goal is to produce a research justification — why the initialization was changed, what problem it solves, and what improvement it provides — suitable for inclusion in a research paper. **Run using `run_notebook.sh`.**
 
 3. **Verification suite — run after bang-ahn is validated**  
-   Once `bang-ahn-grid-init` is fully debugged, diagnosed, and experimentally characterized, run the n_r × n_m scalability experiments (paper Table 6) using the validated bang-ahn notebook. Do not run the verification suite on `main`'s `VRTPP_PR_Optimization.ipynb`.
+   Once `bang-ahn-grid-init` is fully debugged, diagnosed, and experimentally characterized, run the n_r × n_m scalability experiments (paper Table 6) using the validated bang-ahn notebook. Do not run the verification suite on `main`'s `VRTPP_PR_Optimization.ipynb`. **Run using `./run_notebook.sh experiments/experiment_scalability.ipynb`.**
 
 ---
 
@@ -186,6 +205,7 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 | File | Branch | Description |
 |------|--------|-------------|
+| `run_notebook.sh` | all | Execute any notebook and save outputs for Claude to read |
 | `VRTPP_PR_Optimization.ipynb` | all | Primary optimizer notebook |
 | `VRTPP-PaperModel.ipynb` | main | Paper-faithful reference notebook |
 | `BANG_AHN_CHANGES.md` | bang-ahn-grid-init | Full change log, cascade problem analysis, expected results |
