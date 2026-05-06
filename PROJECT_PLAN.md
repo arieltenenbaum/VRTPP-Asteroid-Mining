@@ -44,7 +44,17 @@ Single spacecraft, 10 iterations, ~10.7 s (Windows/Intel Core Ultra 9). Objectiv
 
 ---
 
-## Our Current Best Result (`main` / `bang-ahn-grid-init`)
+## Current Results by Branch
+
+### `main` branch — `VRTPP_PR_Optimization.ipynb` (2D fixed grid init)
+
+```
+Spacecraft 1: Earth → 1943 Anteros → 101955 Bennu → 1989 ML → Earth
+```
+
+Objective ≈ **18.93** (3 mining visits = 30 profit − fuel penalty). Converges in ~23 iterations (soft convergence).
+
+### `bang-ahn-grid-init` branch — `VRTPP_PR_Optimization.ipynb` (adaptive grid init)
 
 ```
 Spacecraft 1: Earth → 2001 CC21 → Earth
@@ -54,7 +64,7 @@ Spacecraft 3: Earth → 162173 Ryugu → 1989 ML → Earth
 
 Objective ≈ **28.20** (3 mining visits = 30 profit − fuel penalty). Converges in ~22 iterations, ~15 min (macOS/M2 Max).
 
-Our objective is higher because we visit 3 mining asteroids vs the paper's 1. This appears to be a genuine improvement — route validity checks pass and mass constraints are satisfied. Neither algorithm guarantees the global optimum; different warm-starts lead to different locally stable solutions.
+Both results outperform the paper's objective of ≈ 9.28 (1 mining visit). The different routes arise from different initialization strategies leading to different locally stable MILP–NLP solutions. Neither algorithm guarantees the global optimum.
 
 ---
 
