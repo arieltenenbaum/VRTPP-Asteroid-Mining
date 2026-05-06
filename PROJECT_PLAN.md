@@ -34,11 +34,11 @@ Repeat until convergence (Δv change < tolerance across consecutive identical ro
 
 ## Paper's Target Result
 
-| Segment | Δv [km/s] | Transfer Time [TU] |
-|---------|-----------|-------------------|
-| Earth → 1996 FG3 | 9.51 | 6.26 |
-| FG3 → 101955 Bennu | 7.32 | 7.06 |
-| Bennu → Earth | 8.17 | 6.81 |
+| Segment | Δv [km/s] | Departure Time [TU] | Transfer Time [TU] |
+|---------|-----------|--------------------|--------------------|
+| Earth → 1996 FG3 | 9.51 | 0.09 | 6.26 |
+| FG3 → 101955 Bennu | 7.32 | 8.83 | 7.06 |
+| Bennu → Earth | 8.17 | 17.59 | 6.81 |
 
 Single spacecraft, 10 iterations, ~10.7 s (Windows/Intel Core Ultra 9). Objective ≈ 9.28.
 
