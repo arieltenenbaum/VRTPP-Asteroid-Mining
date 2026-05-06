@@ -40,7 +40,7 @@ Repeat until convergence (Δv change < tolerance across consecutive identical ro
 | FG3 → 101955 Bennu | 7.32 | 8.83 | 7.06 |
 | Bennu → Earth | 8.17 | 17.59 | 6.81 |
 
-Single spacecraft, 10 iterations, ~10.7 s (Windows/Intel Core Ultra 9). Objective ≈ 9.28.
+**Paper setup**: n_bv = 3 spacecraft (Table 2); the optimizer returns a 1-spacecraft solution for this case study. 10 iterations, ~10.7 s (Windows/Intel Core Ultra 9). Objective ≈ 9.28.
 
 ---
 
@@ -123,7 +123,7 @@ For full details see `BANG_AHN_CHANGES.md`.
 
 Runs the optimizer over all combinations of n_r ∈ {1,2,3} refueling asteroids and n_m ∈ {4,6,8,10} mining asteroid candidates, recording iteration counts, wall-clock time, and mining visits to compare against paper Table 6.
 
-**⚠ Important:** The verification suite is configured to run `VRTPP_PR_Optimization.ipynb` from the `main` branch. It has **not yet been set up to test the `bang-ahn-grid-init` notebook**. Running the scalability experiment on the bang-ahn branch is a planned next step.
+**⚠ Important:** The verification suite is configured to run `VRTPP_PR_Optimization.ipynb` from the `main` branch. It has **not yet been set up to test the `bang-ahn-grid-init` notebook**. Running the scalability experiment on the bang-ahn branch is a planned next step — but only after that branch is fully validated.
 
 ### Section 14 Health Checks (inside `VRTPP_PR_Optimization.ipynb`)
 
@@ -171,12 +171,14 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 ## Open Questions / Next Steps
 
-1. **Validate `bang-ahn-grid-init` against `main`** — confirm the adaptive grid produces the same or better route; run the Section 14 health checks on the bang-ahn notebook
-2. **Set up verification suite for `bang-ahn-grid-init`** — run the n_r × n_m scalability experiments using the bang-ahn notebook and compare against paper Table 6 and `main` results
-3. **Experiment 1 (mass feasibility)** — verify final solution satisfies all physical mass constraints via full rocket equation trace per arc
-4. **Experiment 2 (objective decomposition)** — confirm obj ≈ 28.2 is driven by 3 mining visits, not a modeling artifact
-5. **Experiment 3 verification still needed on bang-ahn branch** — Part 1 intentionally shows DIFF (Earth→FG3 grid finds 6.71 km/s at T_d=4 TU); consider adding Earth departure cap to the experiment grid to match optimizer behavior
-6. **Single-spacecraft mode** — force n_bv=1 to reproduce paper's exact setup as a sanity check
+1. **Main branch — faithful paper replication**  
+   `VRTPP_PaperModel.ipynb` should replicate the paper's formulation, parameters, and Hohmann-based initialization exactly. The paper's setup uses n_bv = 3 (Table 2); a 1-spacecraft solution is what the paper's optimizer returns for the case study, not a forced constraint. Goal: reproduce Table 5 (Earth → 1996 FG3 → 101955 Bennu → Earth, obj ≈ 9.28, ~10 iterations).
+
+2. **bang-ahn-grid-init — validate and justify the modified initialization**  
+   Demonstrate that the Bang-Ahn adaptive grid is a conceptually sound and well-motivated replacement for the paper's Hohmann-based initialization. The goal is to produce a research justification — why the initialization was changed, what problem it solves, and what improvement it provides — suitable for inclusion in a research paper.
+
+3. **Verification suite — run after bang-ahn is validated**  
+   Once `bang-ahn-grid-init` is fully debugged, diagnosed, and experimentally characterized, run the n_r × n_m scalability experiments (paper Table 6) using the validated bang-ahn notebook. Do not run the verification suite on `main`'s `VRTPP_PR_Optimization.ipynb`.
 
 ---
 
