@@ -11,7 +11,7 @@
 #   <notebook>_executed.ipynb   full notebook with all cell outputs
 #   <notebook>_outputs.txt      plain text of every cell's output (for quick reading)
 
-JUPYTER=/Users/ariel/miniconda3/bin/jupyter
+JUPYTER=/Users/ariel/miniconda3/envs/spyder-env/bin/jupyter
 NOTEBOOK="${1:-VRTPP_PR_Optimization.ipynb}"
 BASE="${NOTEBOOK%.ipynb}"
 OUTPUT_NB="${BASE}_executed.ipynb"
