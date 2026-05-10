@@ -144,7 +144,7 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 | Issue | Impact | Status |
 |-------|--------|--------|
 | Fixed initialization grid too coarse | NLP can land in wrong Δv basin; ~6 km/s excess Δv on some legs | Being fixed in `bang-ahn-grid-init` |
-| T_d_max = T_d_min + 5 TU hardcoded | Paper case study specifies 2-day max service time; should be a named variable (`T_service_max = 2 / 58.132` TU) not a magic number | Needs fixing in both notebooks |
+
 | Soft convergence fallback | May declare convergence with slight NLP oscillation | Acceptable; prevents infinite cycling when NLP oscillates between near-identical basins |
 | No multi-objective optimization | Cannot explore profit/fuel trade-off surface | Future feature |
 | Gurobi license | Must run locally on the licensed machine | Permanent constraint |
@@ -157,7 +157,7 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 2. **"No solutions" / infeasible MILP:** Paper doesn't describe this failure mode. Caused by wrong-basin initialization producing mass ratios that make all routes infeasible. Fixed by correct initialization.
 3. **Route oscillation:** Paper's convergence criterion assumes stable routes; doesn't address cycling. Fixed with soft fallback (5+ stable iterations + Δv change < 0.05).
 4. **Virtual node propagation:** Paper doesn't describe how to handle mass ratios for virtual-node arc copies. `VRTPP-PaperModel.ipynb` propagates NLP results to all virtual copies of each physical arc.
-5. **NLP T_d upper bound hardcoded as 5 TU:** The paper case study specifies a 2-day maximum service time at any asteroid. The notebook should define this as a named parameter (`T_service_max = 2 days = 2/58.132 TU ≈ 0.034 TU`) and derive the NLP upper bound from it, rather than using the arbitrary 5 TU magic number.
+
 
 ---
 
