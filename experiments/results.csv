@@ -15,8 +15,8 @@ our_model,1,4,2,47,16.5,2.98,85.66,28.03,2,4,3.2,0,0,10 random instances seed 42
 our_model,1,6,2,35,22.7,18.53,106.31,75.84,1,5,3.8,0,0,10 random instances seed 42-51
 our_model,1,8,2,39,25.5,64.26,459.1,293.55,2,8,4.1,0,0,10 random instances seed 42-51
 our_model,1,10,,,,,,,,,,,,
-our_model,2,4,,,,,,,,,,,,
-our_model,2,6,,,,,,,,,,,,
+our_model,2,4,2,40,25.8,27.17,285.4,152.05,1,4,2.8,0,0,10 random instances seed 42-51
+our_model,2,6,17,50,33,137.59,2086.41,849.17,2,5,3.5,0,1,10 random instances seed 42-51
 our_model,2,8,,,,,,,,,,,,
 our_model,2,10,,,,,,,,,,,,
 our_model,3,4,,,,,,,,,,,,
