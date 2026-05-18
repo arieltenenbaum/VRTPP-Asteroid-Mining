@@ -44,18 +44,19 @@ Single spacecraft, 10 iterations, ~10.7 s (Windows/Intel Core Ultra 9). Objectiv
 
 ---
 
-## Our Current Best Result (`periapsis-init`)
+## Results Comparison
 
-```
-Spacecraft 1: Earth → 1943 Anteros → 162173 Ryugu → Earth
-Spacecraft 2: Earth → 2001 CC21 → 101955 Bennu → 162173 Ryugu → Earth
-```
+| Metric | Paper | `main` (verified) | `periapsis-init` (verified) |
+|--------|-------|-------------------|------------------------------|
+| Iterations to convergence | 10 | ~23 (soft) | ~27 |
+| Objective value | ≈ 9.4 | ≈ 18.93 | ≈ 18.40 |
+| Number of spacecraft | 1 | 1 | 2 |
+| Route | Earth → FG3 → Bennu → Earth | Earth → Anteros → Bennu → 1989 ML → Earth | SC1: Earth → Anteros → Ryugu → Earth; SC2: Earth → CC21 → Bennu → Ryugu → Earth |
+| Mining visits | 1 | 3 | 2 |
 
-Objective ≈ **18.40** (2 mining visits = 20 profit − fuel penalty). Converges in ~27 iterations, ~5 min (macOS/M2 Max).
+Both branches achieve a higher objective than the paper because they visit more mining asteroids (2–3 vs the paper's 1). The `main` branch result (obj ≈ 18.93, 1 spacecraft, 3 mining visits) is the current best single-spacecraft result. The `periapsis-init` branch (obj ≈ 18.40, 2 spacecraft) demonstrates the TA-grid + distance-corrected initialization strategy.
 
-Our objective is higher than the paper's 9.28 because we visit 2 mining asteroids vs the paper's 1. This is a genuine improvement over the paper — the two-spacecraft route is the correct expected structure for this problem configuration.
-
-**Note on the 3-spacecraft / 28.20 result (previously claimed in `bang-ahn-grid-init` and `main`):** This result was produced by different initialization warm-starts and visits 3 mining asteroids. However, it is likely the wrong route — the problem configuration is expected to yield a two-spacecraft solution. That result needs verification and should not be taken as the target. The correct validated baseline is the 2-spacecraft / obj ≈ 18.40 result above.
+**Note:** The previously claimed 28.2 / 3-spacecraft result from earlier sessions was incorrect — that result was produced by a different commit with a different initialization warm-start. Both verified results above were produced from their respective current branch states.
 
 ---
 
@@ -63,10 +64,10 @@ Our objective is higher than the paper's 9.28 because we visit 2 mining asteroid
 
 | Branch | Purpose | Status |
 |--------|---------|--------|
-| `main` | Core MILP–NLP optimizer with NLP warm-start + 2D grid initialization | Working; previously claimed obj ≈ 28.2 (3 spacecraft) — **needs re-verification; expected correct result is 2 spacecraft** |
-| `periapsis-init` | TA-grid + distance-corrected T_t initialization addressing orbital eccentricity | Working; produces obj ≈ 18.40 (2 spacecraft, 2 mining visits) — **current validated baseline** |
+| `main` | Core MILP–NLP optimizer with NLP warm-start + 2D grid initialization | Working; **verified obj ≈ 18.93** (1 spacecraft, 3 mining visits: Earth→Anteros→Bennu→1989 ML→Earth, ~23 soft iters) |
+| `periapsis-init` | TA-grid + distance-corrected T_t initialization addressing orbital eccentricity | Working; **verified obj ≈ 18.40** (2 spacecraft, 2 mining visits, ~27 iters) — current validated baseline for eccentricity-aware init |
 | `verification-suite` | Scalability experiments (n_r × n_m grid) vs. paper Table 6; includes Section 14 optimizer health checks | Verification suite set up for `main`'s notebook only — **NOT yet configured for `bang-ahn-grid-init`** |
-| `bang-ahn-grid-init` | Experimental: adaptive grid sizing derived from orbital mean motions (Bang & Ahn approach) | Under validation; 28.2 result likely wrong route |
+| `bang-ahn-grid-init` | Experimental: adaptive grid sizing derived from orbital mean motions (Bang & Ahn approach) | Under validation; do not use as reference |
 
 ---
 
