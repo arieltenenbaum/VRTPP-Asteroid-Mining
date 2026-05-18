@@ -44,7 +44,7 @@ Single spacecraft, 10 iterations, ~10.7 s (Windows/Intel Core Ultra 9). Objectiv
 
 ---
 
-## Our Current Best Result (`main` / `bang-ahn-grid-init`)
+## Our Current Best Result (`bang-ahn-grid-init`)
 
 ```
 Spacecraft 1: Earth → 2001 CC21 → Earth
@@ -64,7 +64,7 @@ Our objective is higher because we visit 3 mining asteroids vs the paper's 1. Th
 |--------|---------|--------|
 | `main` | Core MILP–NLP optimizer with NLP warm-start + 2D grid initialization | Working; produces obj ≈ 28.2 |
 | `verification-suite` | Scalability experiments (n_r × n_m grid) vs. paper Table 6; includes Section 14 optimizer health checks | Verification suite set up for `main`'s notebook only — **NOT yet configured for `bang-ahn-grid-init`** |
-| `bang-ahn-grid-init` | Experimental: adaptive grid sizing derived from orbital mean motions (Bang & Ahn approach) | Working; produces same route as main; under validation |
+| `bang-ahn-grid-init` | Experimental: adaptive grid sizing derived from orbital mean motions (Bang & Ahn approach) |  under validation |
 
 ---
 
@@ -113,7 +113,7 @@ For full details see `BANG_AHN_CHANGES.md`.
 
 Runs the optimizer over all combinations of n_r ∈ {1,2,3} refueling asteroids and n_m ∈ {4,6,8,10} mining asteroid candidates, recording iteration counts, wall-clock time, and mining visits to compare against paper Table 6.
 
-**⚠ Important:** The verification suite is configured to run `VRTPP_PR_Optimization.ipynb` from the `main` branch. It has **not yet been set up to test the `bang-ahn-grid-init` notebook**. Running the scalability experiment on the bang-ahn branch is a planned next step.
+**⚠ Important:** The verification suite is configured to run `VRTPP_PR_Optimization.ipynb` from the `main` branch. It has **not yet been set up to test the `bang-ahn-grid-init` notebook**. 
 
 ### Section 14 Health Checks (inside `VRTPP_PR_Optimization.ipynb`)
 
@@ -134,7 +134,7 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 | Issue | Impact | Status |
 |-------|--------|--------|
 | Fixed initialization grid too coarse | NLP can land in wrong Δv basin; ~6 km/s excess Δv on some legs | Being fixed in `bang-ahn-grid-init` |
-| T_d_max = T_d_min + 5 TU cap | May miss cheap windows requiring longer asteroid stays | Workaround; time-window constraints are a future feature |
+| T_d_max = T_d_min + 5 TU cap | May miss cheap windows requiring longer asteroid stays |  |
 | Soft convergence fallback | May declare convergence with slight NLP oscillation | Acceptable; prevents infinite cycling when NLP oscillates between near-identical basins |
 | No multi-objective optimization | Cannot explore profit/fuel trade-off surface | Future feature |
 | Gurobi license | Must run locally on the licensed machine | Permanent constraint |
@@ -143,10 +143,8 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 ## Paper Gaps (Known Deviations from Paper Description)
 
-1. **Platform sensitivity:** Paper's Hohmann-only init works on Windows/Intel; on macOS/M2 the same starting point lands in a different Δv basin. Fixed with T_t scan.
-2. **"No solutions" / infeasible MILP:** Paper doesn't describe this failure mode. Caused by wrong-basin initialization producing mass ratios that make all routes infeasible. Fixed by correct initialization.
-3. **Route oscillation:** Paper's convergence criterion assumes stable routes; doesn't address cycling. Fixed with soft fallback (5+ stable iterations + Δv change < 0.05).
-4. **Virtual node propagation:** Paper doesn't describe how to handle mass ratios for virtual-node arc copies. `VRTPP-PaperModel.ipynb` propagates NLP results to all virtual copies of each physical arc.
+1. **Platform sensitivity:** Paper's Hohmann-only init works on Windows/Intel; on macOS/M2 the same starting point lands in a different Δv basin. Never fixed; Hardware issue seems liek the wrong issue but we're moving past it.
+2. **Route oscillation:** Paper's convergence criterion assumes stable routes; doesn't address cycling. Fixed with soft fallback (5+ stable iterations + Δv change < 0.05).
 5. **NLP T_d upper bound:** Paper specifies only a lower bound. Our implementation adds T_d_max = T_d_min + 5 TU to prevent operationally unrealistic long asteroid stays.
 
 ---
@@ -161,12 +159,15 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 ## Open Questions / Next Steps
 
-1. **Validate `bang-ahn-grid-init` against `main`** — confirm the adaptive grid produces the same or better route; run the Section 14 health checks on the bang-ahn notebook
-2. **Set up verification suite for `bang-ahn-grid-init`** — run the n_r × n_m scalability experiments using the bang-ahn notebook and compare against paper Table 6 and `main` results
-3. **Experiment 1 (mass feasibility)** — verify final solution satisfies all physical mass constraints via full rocket equation trace per arc
-4. **Experiment 2 (objective decomposition)** — confirm obj ≈ 28.2 is driven by 3 mining visits, not a modeling artifact
-5. **Experiment 3 verification still needed on bang-ahn branch** — Part 1 intentionally shows DIFF (Earth→FG3 grid finds 6.71 km/s at T_d=4 TU); consider adding Earth departure cap to the experiment grid to match optimizer behavior
-6. **Single-spacecraft mode** — force n_bv=1 to reproduce paper's exact setup as a sanity check
+1. In `peripasis-init` branch, try an initializaion strategy that addresses eccentricity of orbits and conceptually and physically makes sense.
+2. Use `run_notebook.sh` when you (Claude) need to run the notebook yourself and see the results of the notebooks/code.
+4. For the `verification-suite branch`, change VRTPP_PR_Optimization.ipynb to have more of a cap on time limit and do an optimally gap for the solution.
+5. See which research questions my version of the model in the `main` branch and initialization strategy address and write the research questions in `PROJECT_PLAN.md` Something along the lines of this: a. How can multimodality in the VRTPP-PR be addressed without relying on computationally expensive stochastic searches or large pre-trained machine learning datasets?
+b. Can a deterministic and computationally efficient initialization strategy be developed for Lambert-based asteroid routing problems that remains effective across new asteroid sets, mission epochs, and spacecraft configurations?
+c. How can trajectory initialization and routing decisions be made more transparent and auditable so mission planners can directly understand the tradeoffs between departure timing, transfer duration, and propellant cost? 
+6. Change the results.csv to clear out all the results that are in the 'paper' rows.
+   6.1 Run experiments on the VRTPP-PaperModel.ipynb in the same configurations as the n_r and n_m assigned in those rows.
+
 
 ---
 
