@@ -13,6 +13,8 @@ build/
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints
+*_executed.ipynb
+*_outputs.txt
 
 # Gurobi
 *.lp
