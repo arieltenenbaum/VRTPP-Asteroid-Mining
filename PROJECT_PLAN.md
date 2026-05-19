@@ -155,19 +155,19 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 ## Verified: Why `periapsis-init` Is Better Than the Paper Model
 
-Both branches ran on the same setup (n_r=2, n_m=5, n_bv=3, same parameters as paper Table 2). Results confirmed by executing the notebooks on 2026-05-19.
+Notebooks run: `VRTPP_PR_Optimization.ipynb` on `main` branch and `VRTPP_PR_Optimization.ipynb` on `periapsis-init` branch — both at n_r=2, n_m=5, n_bv=3, same parameters as paper Table 2. Executed on 2026-05-19 via `run_notebook.sh`.
 
-### What the paper achieves
+### What the paper achieves (`VRTPP-PaperModel.ipynb`, `main` branch — for reference)
 Earth → FG3 → Bennu → Earth | Δv: 9.51 / 7.32 / 8.17 km/s | obj ≈ 9.4 | 1 spacecraft | 1 mining visit | 10 iterations
 
-### What `main` actually does (bug confirmed)
+### What `VRTPP_PR_Optimization.ipynb` on `main` actually does (bug confirmed)
 - 5 mining visits assigned by MILP (all 5 asteroids), MILP obj = 48.54
 - **False convergence in 2 iterations**: NLP warm-start re-finds the exact same local minimum in iteration 2 (`Active-arc dv change: 0.000000`), triggering convergence even though trajectories are deeply suboptimal
 - **Cascade failure for FG3→Bennu**: Earth departs FG3 at T_d=0.03 TU; this forces FG3→Bennu departure at T_d≈6.16 TU, which is a bad orbital window — NLP finds 12.95 km/s (paper: 7.32) and re-finds it identically in iteration 2
 - Other bad legs: 1989ML→Bennu=14.20 km/s, Earth→SG10=27.48 km/s, Ryugu→Earth=13.40 km/s
 - **Root cause**: coarse T_t grid (steps of 2 TU) initializes at T_d=0; sequential NLP is then forced to a different T_d (6.16 TU) where the same T_t seeds land in a worse Δv basin; warm-start perpetuates the same wrong minimum every iteration
 
-### What `periapsis-init` does (verified better)
+### What `VRTPP_PR_Optimization.ipynb` on `periapsis-init` does (verified better)
 - 1 spacecraft, 2 mining visits (Anteros + 1989 ML), obj = 18.71, 43 genuine iterations
 - TA-grid avoids FG3 entirely: the MILP selects Earth → Anteros → Bennu → 1989 ML → Earth (Δv: 7.88 / 9.30 / 6.10 / 10.21 km/s) — all physically realistic and within normal range
 - No false convergence: successive iterations produce nonzero dv changes, algorithm runs to soft-convergence after 43 iterations
