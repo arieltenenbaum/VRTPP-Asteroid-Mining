@@ -66,7 +66,7 @@ Both branches achieve a higher objective than the paper because they visit more 
 |--------|---------|--------|
 | `main` | Core MILP–NLP optimizer with NLP warm-start + 2D grid initialization | Working; **verified obj ≈ 18.93** (1 spacecraft, 3 mining visits: Earth→Anteros→Bennu→1989 ML→Earth, ~23 soft iters) |
 | `periapsis-init` | TA-grid + distance-corrected T_t initialization addressing orbital eccentricity | Working; **verified obj ≈ 18.40** (2 spacecraft, 2 mining visits, ~27 iters) — current validated baseline for eccentricity-aware init |
-| `verification-suite` | Scalability experiments (n_r × n_m grid) vs. paper Table 6; includes Section 14 optimizer health checks | Verification suite set up for `main`'s notebook only — **NOT yet configured for `bang-ahn-grid-init`** |
+| `verification-suite` | Scalability experiments (n_r × n_m grid) vs. paper Table 6; includes Section 14 optimizer health checks | Uses `VRTPP_PR_Optimization.ipynb` from `periapsis-init` and `VRTPP-PaperModel.ipynb` from `main` (see Notebook Sync Policy) |
 | `bang-ahn-grid-init` | Experimental: adaptive grid sizing derived from orbital mean motions (Bang & Ahn approach) | Under validation; do not use as reference |
 
 ---
@@ -116,7 +116,7 @@ For full details see `BANG_AHN_CHANGES.md`.
 
 Runs the optimizer over all combinations of n_r ∈ {1,2,3} refueling asteroids and n_m ∈ {4,6,8,10} mining asteroid candidates, recording iteration counts, wall-clock time, and mining visits to compare against paper Table 6.
 
-**⚠ Important:** The verification suite is configured to run `VRTPP_PR_Optimization.ipynb` from the `main` branch. It has **not yet been set up to test the `bang-ahn-grid-init` notebook**. 
+**⚠ Important:** The verification suite uses `VRTPP_PR_Optimization.ipynb` from `periapsis-init` and `VRTPP-PaperModel.ipynb` from `main` (see Notebook Sync Policy). Keep these in sync after every relevant commit.
 
 ### Section 14 Health Checks (inside `VRTPP_PR_Optimization.ipynb`)
 
@@ -129,18 +129,6 @@ Runs the optimizer over all combinations of n_r ∈ {1,2,3} refueling asteroids 
 | 14.5 Perturbation sensitivity | PASS (T_d direction only) | Consider adding T_t perturbation |
 
 Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in steps of 2 TU — too coarse for some body pairs. The `bang-ahn-grid-init` branch is intended to fix this.
-
----
-
-## Known Limitations
-
-| Issue | Impact | Status |
-|-------|--------|--------|
-| Fixed initialization grid too coarse | NLP can land in wrong Δv basin; ~6 km/s excess Δv on some legs | Being fixed in `bang-ahn-grid-init` |
-| T_d_max = T_d_min + 5 TU cap | May miss cheap windows requiring longer asteroid stays |  |
-| Soft convergence fallback | May declare convergence with slight NLP oscillation | Acceptable; prevents infinite cycling when NLP oscillates between near-identical basins |
-| No multi-objective optimization | Cannot explore profit/fuel trade-off surface | Future feature |
-| Gurobi license | Must run locally on the licensed machine | Permanent constraint |
 
 ---
 
@@ -164,12 +152,12 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 1. ✅ **DONE** (`periapsis-init`): Implemented TA-grid + distance-corrected T_t initialization. Samples departure body at 16 uniform true-anomaly increments (geometric coverage instead of time-uniform); adds T_t_ecc seed from actual heliocentric departure distance. Produces obj ≈ 18.40, 2 spacecraft, 2 mining visits — validated baseline. Computationally efficient (64 evals/pair vs 102 previously); scales well to larger n_r/n_m.
 2. Use `run_notebook.sh` when you (Claude) need to run the notebook yourself and see the results of the notebooks/code.
-4. For the `verification-suite branch`, change VRTPP_PR_Optimization.ipynb to have more of a cap on time limit and do an optimally gap for the solution.
+4. For the `verification-suite` and `periapsis-init` branches, add a Gurobi time limit (100 s per MILP solve, per paper Section V) and verify the MIP optimality gap in `VRTPP_PR_Optimization.ipynb`. Note: `periapsis-init` already has `MIPGap=0.03` in Cell 18's `build_milp`; only `TimeLimit=100` needs to be added there.
 5. See which research questions my version of the model in the `main` branch and initialization strategy address and write the research questions in `PROJECT_PLAN.md` Something along the lines of this: a. How can multimodality in the VRTPP-PR be addressed without relying on computationally expensive stochastic searches or large pre-trained machine learning datasets?
 b. Can a deterministic and computationally efficient initialization strategy be developed for Lambert-based asteroid routing problems that remains effective across new asteroid sets, mission epochs, and spacecraft configurations?
 c. How can trajectory initialization and routing decisions be made more transparent and auditable so mission planners can directly understand the tradeoffs between departure timing, transfer duration, and propellant cost? 
 6. Change the results.csv to clear out all the results that are in the 'paper' rows.
-   6.1 Run experiments on the VRTPP-PaperModel.ipynb in the same configurations as the n_r and n_m assigned in those rows.
+   6.1 Run experiments on the VRTPP-PaperModel.ipynb in the same configurations as the n_r and n_m assigned in those rows. The notebook used must be the version from the `main` branch. Before running, apply the same Gurobi time limit (100 s, matching the `TimeLimit` added via item 4 above) so results are comparable.
 
 
 ---
@@ -190,3 +178,13 @@ c. How can trajectory initialization and routing decisions be made more transpar
 | `experiments/README.md` | all | Column definitions and paper Table 6 reference values |
 | `HANDOVER_2026-05-06.md` | bang-ahn-grid-init | Latest session notes (bugs fixed, known behavior, next steps) |
 | `HANDOVER_2026-04-27.md` | main | Previous session notes (paper gaps, notebook comparison) |
+
+---
+
+## Notebook Sync Policy
+
+`verification-suite` does not maintain its own versions of the two primary notebooks. It must always use:
+- `VRTPP_PR_Optimization.ipynb` from `periapsis-init` (the most recent eccentricity-aware implementation)
+- `VRTPP-PaperModel.ipynb` from `main`
+
+After any commit to `VRTPP_PR_Optimization.ipynb` on `periapsis-init`, or to `VRTPP-PaperModel.ipynb` on `main`, copy the updated file to `verification-suite` and commit it there too.
