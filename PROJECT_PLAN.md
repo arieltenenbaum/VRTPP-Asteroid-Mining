@@ -77,21 +77,26 @@ Both notebooks share the same MILP formulation, orbital mechanics, index sets, a
 
 ### `VRTPP_PR_Optimization.ipynb` — Primary Implementation
 
-- Used in: `main`, `verification-suite`, `bang-ahn-grid-init`
-- **Initialization**: 2D grid scan (T_d × T_t) then L-BFGS-B refinement; warm-starts NLP from previous iteration's (T_d, T_t)
-- **NLP bounds**: T_d_max = T_d_min + 5 TU; T_t_max = 30 TU
-- Has 13 bugs fixed across 8 sessions
-- Contains porkchop plots (paper Fig. 2) and Section 14 verification suite
+Each branch carries a distinct initialization strategy in `initialize_mass_ratios` (Cell 21):
+
+| Branch | Initialization strategy |
+|--------|------------------------|
+| `main` | Coarse 2D grid: T_d ∈ [0, 13] TU in steps of 1 TU × T_t ∈ [1, 13] TU in steps of 2 TU (7×14 = 98 evals/pair); L-BFGS-B from best grid point; NLP warm-starts from previous iteration's (T_d, T_t) |
+| `periapsis-init` | TA-grid: departure body sampled at 16 uniform true-anomaly increments (0°–337.5°) within [0, 14] TU; 4 T_t seeds per T_d candidate (0.5×T_t_hoh, T_t_hoh, T_t_ecc = π√(((r_dep+a_j)/2)³), 2.0×T_t_hoh); L-BFGS-B from best of 64 evals |
+| `bang-ahn-grid-init` | Adaptive 2D grid: step sizes derived from orbital mean motions — T_d_step = clip(2π/n_fast/4, 0.75, 2.5) TU, T_t_step = clip(π/n_fast/2, 0.75, 2.0) TU; Earth departure capped at T_d ≤ 2.0 TU; L-BFGS-B from best point |
+
+Common to all branches: NLP bounds T_d_max = T_d_min + 5 TU, T_t_max = 30 TU. Has 13 bugs fixed across 8 sessions. Contains porkchop plots (paper Fig. 2); Section 14 verification suite exists in `main`/`verification-suite` only.
 
 ### `VRTPP-PaperModel.ipynb` — Paper-Faithful Reference
 
-- Used in: `main` only
-- **Initialization**: 1D T_t scan at T_d = 0 (close to paper's Hohmann-only description) then `trust-constr` NLP
-- **NLP bounds**: No upper bound on T_d (follows paper Eq. 44 literally)
-- Written clean without bug history; serves as controlled reference
-- Contains: Δv landscape diagnostics (Cell 18), Experiment 3 paper route verification (Cells 30–31), route visualization
+Implements Section IV.A literally as described in the paper:
+- **Initialization** (paper's exact algorithm): T_d = 0 (lower bound from Eq. 44); T_t seeds = Hohmann half-period T_t_hoh = π√(a_transfer³) and full-period 2×T_t_hoh; `trust-constr` NLP from these two seeds, keeping the lower-Δv result
+- **NLP warm-start** (subsequent iterations): T_d = T_d_min (Eq. 44 lower bound); T_t = transfer time from previous iteration
+- **NLP bounds**: No upper bound on T_d (paper Eq. 44 specifies only a lower bound)
+- Used in `main` only; written clean without bug-fix history; serves as controlled reference
+- Contains: Δv landscape diagnostics (Cell 18), Experiment 3 paper route verification (Cells 36+), route visualization
 
-**Why two notebooks exist:** `VRTPP-PaperModel.ipynb` was created to answer "if we follow the paper's algorithm literally, can we reproduce their Earth→FG3→Bennu→Earth route?" It isolates solver behavior from implementation choices.
+**Why two notebooks exist:** `VRTPP-PaperModel.ipynb` answers "if we follow the paper's algorithm literally, can we reproduce Earth→FG3→Bennu→Earth?" It isolates solver behavior from implementation choices made in `VRTPP_PR_Optimization.ipynb`.
 
 ---
 
