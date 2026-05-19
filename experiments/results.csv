@@ -1,5 +1,5 @@
 model,n_r,n_m,iterations_min,iterations_max,iterations_mean,time_min_sec,time_max_sec,time_mean_sec,mining_asteroids_min,mining_asteroids_max,mining_asteroids_mean,trivial_problems,non_converged_problems,notes
-paper,1,4,,,,,,,,,,,,
+paper,1,4,6,43,18.5,33.91,189.72,95.22,1,3,1.7,0,0,10 random instances seed 42-51; current main PaperModel
 paper,1,6,,,,,,,,,,,,
 paper,1,8,,,,,,,,,,,,
 paper,1,10,,,,,,,,,,,,
