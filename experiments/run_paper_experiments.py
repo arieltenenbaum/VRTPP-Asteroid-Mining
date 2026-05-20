@@ -168,14 +168,14 @@ def run_config(n_r, n_m):
             inst.append({"iters": MAX_ITERATIONS, "time": 0.0, "mine": 0, "nc": 1, "gap": 0.0})
             continue
 
-        mc  = sum(1 for sr in (sol.get("routes") or []) for n in sr if n in sets["M"])
-        nc  = 1 if sol.get("status") not in ("converged",) else 0
-        gap = sol.get("mip_gap_final", 0.0)
+        mc      = sum(1 for sr in (sol.get("routes") or []) for n in sr if n in sets["M"])
+        nc      = 1 if sol.get("status") not in ("converged",) else 0
+        sol_gap = sol.get("mip_gap_final", 0.0)
         inst.append({"iters": sol.get("iterations", MAX_ITERATIONS),
                      "time": sol.get("elapsed_time", 0.0),
-                     "mine": mc, "nc": nc, "gap": gap})
+                     "mine": mc, "nc": nc, "gap": sol_gap})
         print(f"{sol.get('status')}, {sol.get('iterations')} iters, "
-              f"{sol.get('elapsed_time', 0.):.1f}s, {mc} mine, gap={gap:.4f}", flush=True)
+              f"{sol.get('elapsed_time', 0.):.1f}s, {mc} mine, gap={sol_gap:.4f}", flush=True)
 
     iters = [r["iters"] for r in inst]
     times = [r["time"]  for r in inst]
@@ -185,7 +185,7 @@ def run_config(n_r, n_m):
         "iter_min": min(iters), "iter_max": max(iters), "iter_mean": statistics.mean(iters),
         "time_min": min(times), "time_max": max(times), "time_mean": statistics.mean(times),
         "mine_min": min(mines), "mine_max": max(mines), "mine_mean": statistics.mean(mines),
-        "trivials":  sum(1 for r in inst if r["mine"] == 0),
+        "trivials":  sum(1 for r in inst if r["iters"] == 1),
         "non_convs": sum(r["nc"] for r in inst),
         "gap_min": min(gaps), "gap_max": max(gaps), "gap_mean": statistics.mean(gaps),
     }
