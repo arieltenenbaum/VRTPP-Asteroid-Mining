@@ -67,7 +67,6 @@ Both branches achieve a higher objective than the paper because they visit more 
 | `main` | Core MILP–NLP optimizer with NLP warm-start + 2D grid initialization | Working; **verified obj ≈ 18.93** (1 spacecraft, 3 mining visits: Earth→Anteros→Bennu→1989 ML→Earth, ~23 soft iters) |
 | `periapsis-init` | TA-grid + distance-corrected T_t initialization addressing orbital eccentricity | Working; **verified obj ≈ 18.40** (2 spacecraft, 2 mining visits, ~27 iters) — current validated baseline for eccentricity-aware init |
 | `verification-suite` | Scalability experiments (n_r × n_m grid) vs. paper Table 6; includes Section 14 optimizer health checks | Uses `VRTPP_PR_Optimization.ipynb` from `periapsis-init` and `VRTPP-PaperModel.ipynb` from `main` (see Notebook Sync Policy) |
-| `bang-ahn-grid-init` | Experimental: adaptive grid sizing derived from orbital mean motions (Bang & Ahn approach) | Under validation; do not use as reference |
 
 ---
 
@@ -83,7 +82,6 @@ Each branch carries a distinct initialization strategy in `initialize_mass_ratio
 |--------|------------------------|
 | `main` | Coarse 2D grid: T_d ∈ [0, 13] TU in steps of 1 TU × T_t ∈ [1, 13] TU in steps of 2 TU (7×14 = 98 evals/pair); L-BFGS-B from best grid point; NLP warm-starts from previous iteration's (T_d, T_t) |
 | `periapsis-init` | TA-grid: departure body sampled at 16 uniform true-anomaly increments (0°–337.5°) within [0, 14] TU; 4 T_t seeds per T_d candidate (0.5×T_t_hoh, T_t_hoh, T_t_ecc = π√(((r_dep+a_j)/2)³), 2.0×T_t_hoh); L-BFGS-B from best of 64 evals |
-| `bang-ahn-grid-init` | Adaptive 2D grid: step sizes derived from orbital mean motions — T_d_step = clip(2π/n_fast/4, 0.75, 2.5) TU, T_t_step = clip(π/n_fast/2, 0.75, 2.0) TU; Earth departure capped at T_d ≤ 2.0 TU; L-BFGS-B from best point |
 
 Common to all branches: NLP bounds T_d_max = T_d_min + 5 TU, T_t_max = 30 TU. Has 13 bugs fixed across 8 sessions. Contains porkchop plots (paper Fig. 2); Section 14 verification suite exists in `main`/`verification-suite` only.
 
@@ -97,23 +95,6 @@ Implements Section IV.A literally as described in the paper:
 - Contains: Δv landscape diagnostics (Cell 18), Experiment 3 paper route verification (Cells 36+), route visualization
 
 **Why two notebooks exist:** `VRTPP-PaperModel.ipynb` answers "if we follow the paper's algorithm literally, can we reproduce Earth→FG3→Bennu→Earth?" It isolates solver behavior from implementation choices made in `VRTPP_PR_Optimization.ipynb`.
-
----
-
-## The Bang & Ahn Branch (`bang-ahn-grid-init`)
-
-Addresses the known local-minimum problem in initialization. Four changes to `VRTPP_PR_Optimization.ipynb`:
-
-| Change | Cell | What |
-|--------|------|------|
-| Adaptive grid step sizes in `initialize_mass_ratios` | 21 | Steps derived from orbital mean motions: `T_d_step = clip(2π/n_fast/4, 0.75, 2.5)` TU |
-| 2D adaptive scan in `optimize_segment` | 14 | Scans both T_d and T_t before L-BFGS-B (was: 1D T_t scan at fixed T_d) |
-| `mean_motion` property on `OrbitalBody` | 4 | Computed property for the adaptive formula |
-| Removed warm-start plumbing from `solve_vrtpp_pr` | 24 | 2D scan makes warm-starting unnecessary; warm-start was causing cascade failures |
-
-**The cascade problem (key debugging finding):** The optimizer found Earth→FG3 at 6.60 km/s (T_d = 4.07 TU) instead of the paper's 9.51 km/s (T_d = 0.09 TU). This is a genuinely cheaper leg in isolation, but it shifts FG3's arrival time past the optimal FG3→Bennu departure window, forcing all downstream legs into worse geometry. **Fix:** Earth departure capped at T_d ≤ 2.0 TU in both Cell 14 and Cell 21.
-
-For full details see `BANG_AHN_CHANGES.md`.
 
 ---
 
@@ -133,7 +114,7 @@ Runs the optimizer over all combinations of n_r ∈ {1,2,3} refueling asteroids 
 | 14.4 Brute-force enumeration | Skipped (4-body route) | Re-run after fixing init |
 | 14.5 Perturbation sensitivity | PASS (T_d direction only) | Consider adding T_t perturbation |
 
-Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in steps of 2 TU — too coarse for some body pairs. The `bang-ahn-grid-init` branch is intended to fix this.
+Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in steps of 2 TU — too coarse for some body pairs.
 
 ---
 
@@ -149,7 +130,6 @@ Root cause of 14.2 and 14.3: initialization grid scans T_t only up to 13 TU in s
 
 - **Gurobi runs locally only** — license tied to local machine
 - Code must be run in Jupyter, outputs copied manually for analysis
-- `main` branch is the stable reference; `bang-ahn-grid-init` is experimental
 
 ---
 
@@ -199,15 +179,12 @@ c. How can trajectory initialization and routing decisions be made more transpar
 |------|--------|-------------|
 | `VRTPP_PR_Optimization.ipynb` | all | Primary optimizer notebook |
 | `VRTPP-PaperModel.ipynb` | main | Paper-faithful reference notebook |
-| `BANG_AHN_CHANGES.md` | bang-ahn-grid-init | Full change log, cascade problem analysis, expected results |
-| `Bang_Ahn_Change1_Explanation.md` | bang-ahn-grid-init | Deep-dive on adaptive grid sizing |
 | `INITIALIZATION_EXPLAINED.md` | main | How grid scan, L-BFGS-B, and warm-start work |
 | `MODEL_COMPARISON_AND_VALIDATION.md` | all | Paper vs. implementation comparison; notebook comparison (§9) |
 | `VERIFICATION.md` | verification-suite | Section 14 health check findings and recommended fixes |
 | `experiments/experiment_scalability.ipynb` | verification-suite | Scalability experiment runner |
 | `experiments/results.csv` | verification-suite | Results table (paper Table 6 values filled; our model rows empty) |
 | `experiments/README.md` | all | Column definitions and paper Table 6 reference values |
-| `HANDOVER_2026-05-06.md` | bang-ahn-grid-init | Latest session notes (bugs fixed, known behavior, next steps) |
 | `HANDOVER_2026-04-27.md` | main | Previous session notes (paper gaps, notebook comparison) |
 
 ---
