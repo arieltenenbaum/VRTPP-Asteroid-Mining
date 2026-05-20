@@ -37,7 +37,9 @@ ALL_CONFIGS = [
 N_INSTANCES     = 3
 BASE_SEED       = 42
 MILP_TIME_LIMIT = 30.0
-MILP_MIP_GAP    = 0.0
+# MIP gap scales with n_r: larger configs accept a looser optimality guarantee
+# to avoid long MILP solves on already-difficult NLP subproblems.
+MILP_MIP_GAP_BY_NR = {1: 0.0, 2: 0.05, 3: 0.10}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Core implementation — extracted verbatim from VRTPP_PR_Optimization.ipynb
@@ -746,9 +748,10 @@ def update_csv_row(n_r, n_m, s):
             r['mip_gap_final_min']     = str(round(s['gap_min'], 6))
             r['mip_gap_final_max']     = str(round(s['gap_max'], 6))
             r['mip_gap_final_mean']    = str(round(s['gap_mean'], 6))
+            mip_gap_used = MILP_MIP_GAP_BY_NR.get(n_r, 0.10)
             r['notes'] = (f"{N_INSTANCES} random instances seed {BASE_SEED}-"
                           f"{BASE_SEED + N_INSTANCES - 1}; "
-                          f"MIPGap={MILP_MIP_GAP} TimeLimit={int(MILP_TIME_LIMIT)}s")
+                          f"MIPGap={mip_gap_used} TimeLimit={int(MILP_TIME_LIMIT)}s")
             break
     save_csv(rows)
     print(f"  ✓ results.csv updated for n_r={n_r}, n_m={n_m}", flush=True)
@@ -823,8 +826,9 @@ def main():
             p   = Parameters()
             s   = build_index_sets(p, N_R, N_M)
             n2b, n2n = build_node_mapping(s, ref, mine)
+            mip_gap = MILP_MIP_GAP_BY_NR.get(N_R, 0.10)
             sol = solve_vrtpp_pr(p, s, n2b, n2n, verbose=False,
-                                 time_limit=MILP_TIME_LIMIT, mip_gap=MILP_MIP_GAP)
+                                 time_limit=MILP_TIME_LIMIT, mip_gap=mip_gap)
             if sol is None:
                 inst.append({'iters': 50, 'time': 0., 'mine': 0, 'nc': 1, 'gap': 0.})
                 print("failed", flush=True)

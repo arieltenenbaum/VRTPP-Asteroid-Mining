@@ -24,7 +24,10 @@ Comparison between the paper (Choi & Ho, AIAA SciTech 2026) and our extended mod
 | Configs | N_INSTANCES | Seeds | MIPGap | TimeLimit | Reason for change |
 |---------|-------------|-------|--------|-----------|-------------------|
 | our_model (1,4) and (1,6) | 5 | 42–46 | 0.0 | 30 s | Initial setting |
-| our_model (1,8) onward | 3 | 42–44 | 0.0 | 30 s | Reduced instances to shorten runtime |
+| our_model (1,8) | 5 | 42–46 | 0.0 | 30 s | Ran before instance reduction |
+| our_model n_r=1 (1,8) onward | 3 | 42–44 | 0.0 | 30 s | Reduced instances to shorten runtime |
+| our_model n_r=2 | 3 | 42–44 | 0.05 | 30 s | Relaxed MIP gap to speed up larger configs |
+| our_model n_r=3 | 3 | 42–44 | 0.10 | 30 s | Further relaxed MIP gap for largest configs |
 
 ## Paper Results (Table 6, VRTPP-PR)
 
