@@ -16,7 +16,15 @@ Comparison between the paper (Choi & Ho, AIAA SciTech 2026) and our extended mod
 | `mining_asteroids_min/max/mean` | Number of asteroids selected for mining in the optimal solution |
 | `trivial_problems` | Problems that converged in 1 iteration (trivially solved) |
 | `non_converged_problems` | Problems that hit the iteration limit without converging |
-| `notes` | Free-text annotation |
+| `mip_gap_final_min/max/mean` | Gurobi MIPGap at the final MILP call of each instance (0.0 = proven optimal) |
+| `notes` | Free-text annotation — includes instance count, seed range, MIPGap, and TimeLimit |
+
+## Experiment Settings Log
+
+| Configs | N_INSTANCES | Seeds | MIPGap | TimeLimit | Reason for change |
+|---------|-------------|-------|--------|-----------|-------------------|
+| our_model (1,4) and (1,6) | 5 | 42–46 | 0.0 | 30 s | Initial setting |
+| our_model (1,8) onward | 3 | 42–44 | 0.0 | 30 s | Reduced instances to shorten runtime |
 
 ## Paper Results (Table 6, VRTPP-PR)
 
