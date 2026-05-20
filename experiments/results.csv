@@ -1,6 +1,6 @@
 model,n_r,n_m,iterations_min,iterations_max,iterations_mean,time_min_sec,time_max_sec,time_mean_sec,mining_asteroids_min,mining_asteroids_max,mining_asteroids_mean,trivial_problems,non_converged_problems,mip_gap_final_min,mip_gap_final_max,mip_gap_final_mean,notes
 paper,1,4,16,22,19.67,44.92,73.51,59.97,1,2,1.33,0,0,0.0,0.0,0.0,3 random instances seed 42-44; TimeLimit=30s; MaxIter=50; indicative only (paper uses 10 instances)
-paper,1,6,4,50,22,13.53,248.26,112.92,0,4,1.6,1,1,0.0,0.0,0.0,5 random instances seed 42-46; TimeLimit=30s; MaxIter=50
+paper,1,6,4,50,24,12.56,200.03,104.48,0,1,0.67,1,1,0.0,0.0,0.0,3 random instances seed 42-44; TimeLimit=30s; MaxIter=50; indicative only (paper uses 10 instances)
 paper,1,8,,,,,,,,,,,,,,,
 paper,1,10,,,,,,,,,,,,,,,
 paper,2,4,,,,,,,,,,,,,,,

@@ -28,13 +28,16 @@ REPO_ROOT   = SCRIPT_DIR.parent
 RESULTS_CSV = SCRIPT_DIR / "results.csv"
 NOTEBOOK    = REPO_ROOT / "VRTPP-PaperModel.ipynb"
 
-# ── Settings (same as run_experiments.py) ────────────────────────────────────
+# ── Settings (kept in sync with run_experiments.py) ──────────────────────────
+# N_INSTANCES=3 and MILP_TIME_LIMIT=30s are intentionally reduced from the
+# paper's setup (10 instances, longer limits) to keep exploratory runs fast.
+# Results are therefore indicative, not a full paper replication.
 ALL_CONFIGS = [
     (1, 4), (1, 6), (1, 8), (1, 10),
     (2, 4), (2, 6), (2, 8), (2, 10),
     (3, 4), (3, 6), (3, 8), (3, 10),
 ]
-N_INSTANCES     = 5
+N_INSTANCES     = 3
 BASE_SEED       = 42
 MILP_TIME_LIMIT = 30.0
 MAX_ITERATIONS  = 50
@@ -125,7 +128,8 @@ def update_csv_row(n_r, n_m, stats):
                 f"{N_INSTANCES} random instances seed {BASE_SEED}-"
                 f"{BASE_SEED + N_INSTANCES - 1}; "
                 f"TimeLimit={int(MILP_TIME_LIMIT)}s; "
-                f"MaxIter={MAX_ITERATIONS}"
+                f"MaxIter={MAX_ITERATIONS}; "
+                f"indicative only (paper uses 10 instances)"
             )
             break
     save_csv(rows)
