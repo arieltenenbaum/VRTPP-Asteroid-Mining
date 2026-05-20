@@ -34,7 +34,7 @@ ALL_CONFIGS = [
     (2, 4), (2, 6), (2, 8),
     (3, 4), (3, 6), (3, 8),
 ]
-N_INSTANCES     = 5
+N_INSTANCES     = 3
 BASE_SEED       = 42
 MILP_TIME_LIMIT = 30.0
 MILP_MIP_GAP    = 0.0
