@@ -1,0 +1,16 @@
+model,n_r,n_m,iterations_min,iterations_max,iterations_mean,time_min_sec,time_max_sec,time_mean_sec,mining_asteroids_min,mining_asteroids_max,mining_asteroids_mean,trivial_problems,non_converged_problems,mip_gap_final_min,mip_gap_final_max,mip_gap_final_mean,notes
+paper,1,4,,,,,,,,,,,,,,,,skeleton — not yet run
+paper,1,6,,,,,,,,,,,,,,,,skeleton — not yet run
+paper,1,8,,,,,,,,,,,,,,,,skeleton — not yet run
+paper,2,4,,,,,,,,,,,,,,,,skeleton — not yet run
+paper,2,6,,,,,,,,,,,,,,,,skeleton — not yet run
+paper,2,8,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,1,4,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,1,6,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,1,8,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,2,4,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,2,6,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,2,8,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,3,4,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,3,6,,,,,,,,,,,,,,,,skeleton — not yet run
+our_model,3,8,,,,,,,,,,,,,,,,skeleton — not yet run
