@@ -488,6 +488,109 @@ def _plot_exp2_leg_table(baseline_legs, proposed_legs, labels,
     save_figure(fig, results_dir / "exp2_leg_table.png")
 
 
+# ── Summary writer ────────────────────────────────────────────────────────────
+
+def write_summary(results1: dict, results2: dict, results_dir: pathlib.Path) -> None:
+    import datetime
+    path = results_dir / "results_summary.md"
+    r1 = results1
+    r2 = results2
+
+    lines = [
+        "# Verification Suite Results",
+        f"_Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}_",
+        "",
+        "---",
+        "",
+        "## Experiment 1: Arc-Cost Matrix Comparison",
+        "",
+        "Initialization strategy: **Baseline** = single Hohmann seed at T_d=0;  ",
+        "**Proposed** = TA-grid (16 true-anomaly samples) + distance-corrected T_t seeds.",
+        "",
+        "### Summary metrics",
+        "",
+        f"| Metric | Value |",
+        f"|--------|-------|",
+        f"| Arcs compared | {r1.get('n_arcs_compared', 'N/A')} |",
+        f"| Mean ΔV diff (proposed − paper) | {r1.get('mean_dv_diff', float('nan')):+.3f} km/s |",
+        f"| Max \|ΔV diff\| | {r1.get('max_dv_diff', float('nan')):.3f} km/s |",
+        f"| % arcs improved by proposed | {r1.get('pct_improved', float('nan')):.1f}% |",
+        f"| % arcs where paper was better | {100 - r1.get('pct_improved', 0):.1f}% |",
+        f"| Rank changes across destinations | {r1.get('rank_changes', 'N/A')} |",
+        "",
+        "### Canonical route arcs (Earth → FG3 → Bennu → Earth)",
+        "",
+        "| Arc | Baseline ΔV (km/s) | Proposed ΔV (km/s) | Δ (km/s) |",
+        "|-----|-------------------|-------------------|----------|",
+    ]
+    for arc in r1.get("route_arc_diffs", []):
+        if arc["dv_paper"] is not None:
+            lines.append(
+                f"| {arc['arc']} | {arc['dv_paper']:.3f} | {arc['dv_proposed']:.3f} "
+                f"| {arc['delta']:+.3f} |"
+            )
+        else:
+            lines.append(f"| {arc['arc']} | N/A | N/A | N/A |")
+
+    lines += [
+        "",
+        "---",
+        "",
+        "## Experiment 2: Initialization Sensitivity and Propagation",
+        "",
+        "Fixed route: **Earth → 1996 FG3 → 101955 Bennu → Earth** (paper Table 5 route).  ",
+        "Each leg is cold-started (T_t_prev=None), invoking each model's own init logic.",
+        "",
+        "### Per-leg trajectory parameters",
+        "",
+        "| Leg | Model | T_d (TU) | T_t (TU) | ΔV (km/s) | T_arrival (TU) |",
+        "|-----|-------|----------|----------|-----------|----------------|",
+    ]
+    labels = ["Earth → FG3", "FG3 → Bennu", "Bennu → Earth"]
+    for lbl, bl, pl in zip(labels,
+                            r2.get("baseline_legs", []),
+                            r2.get("proposed_legs", [])):
+        lines.append(
+            f"| {lbl} | Baseline | {bl['T_d']:.3f} | {bl['T_t']:.3f} "
+            f"| {bl['delta_v']:.3f} | {bl['T_a']:.3f} |"
+        )
+        lines.append(
+            f"| | Proposed | {pl['T_d']:.3f} | {pl['T_t']:.3f} "
+            f"| {pl['delta_v']:.3f} | {pl['T_a']:.3f} |"
+        )
+
+    b_total = r2.get("baseline_total_dv", float("nan"))
+    p_total = r2.get("proposed_total_dv", float("nan"))
+    imp_abs = r2.get("dv_improvement_kms", float("nan"))
+    imp_pct = r2.get("dv_improvement_pct", float("nan"))
+
+    lines += [
+        "",
+        "### Total route ΔV",
+        "",
+        f"| Model | Total ΔV (km/s) |",
+        f"|-------|----------------|",
+        f"| Baseline | {b_total:.3f} |",
+        f"| Proposed | {p_total:.3f} |",
+        f"| Improvement | {imp_abs:+.3f} km/s ({imp_pct:+.1f}%) |",
+        "",
+        "---",
+        "",
+        "## Output files",
+        "",
+        "| File | Description |",
+        "|------|-------------|",
+        "| `exp1_dv_heatmap.png` | Heatmap of ΔV differences (proposed − baseline) per body pair |",
+        "| `exp1_summary_table.png` | Summary metrics table for Exp 1 |",
+        "| `exp2_timeline.png` | Mission timeline comparison (horizontal bar chart) |",
+        "| `exp2_leg_table.png` | Per-leg parameter table for Exp 2 |",
+        "",
+    ]
+
+    path.write_text("\n".join(lines))
+    print(f"  Saved: {path.relative_to(ROOT)}", flush=True)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -499,6 +602,8 @@ def main():
     results1 = run_experiment_1(ns_paper, ns_proposed)
     results2 = run_experiment_2(ns_paper, ns_proposed)
 
+    write_summary(results1, results2, RESULTS_DIR)
+
     print("\n" + "=" * 70, flush=True)
     print("VERIFICATION SUITE COMPLETE", flush=True)
     print("=" * 70, flush=True)
@@ -508,6 +613,7 @@ def main():
         RESULTS_DIR / "exp1_summary_table.png",
         RESULTS_DIR / "exp2_timeline.png",
         RESULTS_DIR / "exp2_leg_table.png",
+        RESULTS_DIR / "results_summary.md",
     ]
     for p in expected:
         status = "OK" if p.exists() else "MISSING"
