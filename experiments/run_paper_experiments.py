@@ -28,20 +28,24 @@ REPO_ROOT   = SCRIPT_DIR.parent
 RESULTS_CSV = SCRIPT_DIR / "results.csv"
 NOTEBOOK    = REPO_ROOT / "VRTPP-PaperModel.ipynb"
 
-# ── Settings (kept in sync with run_experiments.py) ──────────────────────────
-# N_INSTANCES=3 and MILP_TIME_LIMIT=30s are intentionally reduced from the
-# paper's setup (10 instances, longer limits) to keep exploratory runs fast.
-# Results are therefore indicative, not a full paper replication.
+# ── Settings — kept in sync with run_experiments.py ──────────────────────────
+# Intentionally reduced from the paper's full setup (10 instances, longer
+# limits) to keep exploratory runs fast. Results are indicative only.
+#
+# MIP gap is tiered by n_r, identical to run_experiments.py:
+#   n_r=1 → MIPGap=0.00, n_r=2 → MIPGap=0.05, n_r=3 → MIPGap=0.10
+# The gap used is recorded in the results.csv notes column.
 ALL_CONFIGS = [
     (1, 4), (1, 6), (1, 8), (1, 10),
     (2, 4), (2, 6), (2, 8), (2, 10),
     (3, 4), (3, 6), (3, 8), (3, 10),
 ]
-N_INSTANCES     = 3
-BASE_SEED       = 42
-MILP_TIME_LIMIT = 30.0
-MAX_ITERATIONS  = 50
-CONVERGENCE_TOL = 1e-3
+N_INSTANCES          = 3
+BASE_SEED            = 42
+MILP_TIME_LIMIT      = 30.0
+MAX_ITERATIONS       = 50
+CONVERGENCE_TOL      = 1e-3
+MILP_MIP_GAP_BY_NR   = {1: 0.0, 2: 0.05, 3: 0.10}  # mirrors run_experiments.py
 
 # ── Load notebook definitions ────────────────────────────────────────────────
 # Cells: 2=imports, 4=OrbitalBody, 5=LambertSolver, 7=asteroid data,
@@ -127,9 +131,8 @@ def update_csv_row(n_r, n_m, stats):
             row["notes"] = (
                 f"{N_INSTANCES} random instances seed {BASE_SEED}-"
                 f"{BASE_SEED + N_INSTANCES - 1}; "
-                f"TimeLimit={int(MILP_TIME_LIMIT)}s; "
-                f"MaxIter={MAX_ITERATIONS}; "
-                f"indicative only (paper uses 10 instances)"
+                f"MIPGap={MILP_MIP_GAP_BY_NR.get(n_r, 0.10)} "
+                f"TimeLimit={int(MILP_TIME_LIMIT)}s"
             )
             break
     save_csv(rows)
@@ -137,7 +140,8 @@ def update_csv_row(n_r, n_m, stats):
 
 # ── Runner ────────────────────────────────────────────────────────────────────
 def run_config(n_r, n_m):
-    print(f"\n{'#'*70}\nPAPER CONFIG: n_r={n_r}, n_m={n_m}\n{'#'*70}\n", flush=True)
+    gap = MILP_MIP_GAP_BY_NR.get(n_r, 0.10)
+    print(f"\n{'#'*70}\nPAPER CONFIG: n_r={n_r}, n_m={n_m}  MIPGap={gap:.0%}\n{'#'*70}\n", flush=True)
     inst = []
     for idx in range(N_INSTANCES):
         seed = BASE_SEED + idx
@@ -152,6 +156,7 @@ def run_config(n_r, n_m):
                 max_iterations=MAX_ITERATIONS,
                 convergence_tol=CONVERGENCE_TOL,
                 time_limit=MILP_TIME_LIMIT,
+                mip_gap=gap,
             )
         except Exception as exc:
             print(f"ERROR: {exc}", flush=True)
