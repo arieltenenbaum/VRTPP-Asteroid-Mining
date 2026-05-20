@@ -210,12 +210,50 @@ def run_experiment_1(ns_paper: dict, ns_proposed: dict) -> dict:
         print("  WARNING: proposed improved fewer than 10% of arcs — check initialization",
               flush=True)
 
+    # ── Eccentricity gap: per destination body ────────────────────────────────
+    # For each destination, find the best (min ΔV) Earth→body arc for each model.
+    # This isolates the effect of destination eccentricity on initialization quality.
+    earth_name = "Earth"
+    ecc_gap_data = []
+    dst_bodies_seen = set()
+    for r in arc_data:
+        if r["src_name"] != earth_name:
+            continue
+        dst = r["dst_name"]
+        if dst == earth_name or dst in dst_bodies_seen:
+            continue
+        # Aggregate across all virtual nodes to the same physical body
+        matches = [x for x in arc_data if x["src_name"] == earth_name and x["dst_name"] == dst]
+        best_paper    = min(matches, key=lambda x: x["dv_paper"])
+        best_proposed = min(matches, key=lambda x: x["dv_proposed"])
+        # Get eccentricity from node_to_body
+        body_j = next(
+            (n2b_p[x["j"]] for x in matches if n2b_p[x["j"]].name == dst), None
+        )
+        if body_j is not None:
+            ecc_gap_data.append({
+                "body": dst,
+                "ecc": body_j.e,
+                "dv_paper": best_paper["dv_paper"],
+                "dv_proposed": best_proposed["dv_proposed"],
+                "gap": best_paper["dv_paper"] - best_proposed["dv_proposed"],
+            })
+            dst_bodies_seen.add(dst)
+
+    ecc_gap_data.sort(key=lambda x: x["ecc"])
+    print("\n  Eccentricity gap (Earth → body, baseline − proposed):", flush=True)
+    for row in ecc_gap_data:
+        print(f"    {row['body']:25s}  e={row['ecc']:.3f}  "
+              f"baseline={row['dv_paper']:6.2f}  proposed={row['dv_proposed']:6.2f}  "
+              f"gap={row['gap']:+6.3f} km/s", flush=True)
+
     # ── Figures ───────────────────────────────────────────────────────────────
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     _plot_exp1_heatmap(arc_data, n2b_p, RESULTS_DIR)
     _plot_exp1_summary_table(
         mean_diff, max_diff, pct_improved, rank_changes, route_arc_diffs, RESULTS_DIR
     )
+    _plot_exp1_eccentricity_gap(ecc_gap_data, RESULTS_DIR)
 
     return {
         "mean_dv_diff": mean_diff,
@@ -224,6 +262,7 @@ def run_experiment_1(ns_paper: dict, ns_proposed: dict) -> dict:
         "rank_changes": rank_changes,
         "route_arc_diffs": route_arc_diffs,
         "n_arcs_compared": len(common_arcs),
+        "ecc_gap_data": ecc_gap_data,
     }
 
 
@@ -317,6 +356,70 @@ def _plot_exp1_summary_table(mean_diff, max_diff, pct_improved, rank_changes,
                  fontsize=11, fontweight="bold", pad=12)
     fig.tight_layout()
     save_figure(fig, results_dir / "exp1_summary_table.png")
+
+
+def _plot_exp1_eccentricity_gap(ecc_gap_data: list, results_dir: pathlib.Path) -> None:
+    """Plot ΔV gap (baseline − proposed) for Earth→body arcs vs. destination eccentricity."""
+    if not ecc_gap_data:
+        return
+
+    eccs = [r["ecc"]    for r in ecc_gap_data]
+    gaps = [r["gap"]    for r in ecc_gap_data]
+    dvp  = [r["dv_paper"]    for r in ecc_gap_data]
+    dvo  = [r["dv_proposed"] for r in ecc_gap_data]
+    names = [r["body"].split()[-1] for r in ecc_gap_data]  # short label
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    # ── Left: ΔV gap vs eccentricity ──────────────────────────────────────────
+    ax = axes[0]
+    colors = ["#e74c3c" if g < 0 else "#2ecc71" for g in gaps]
+    ax.scatter(eccs, gaps, c=colors, s=120, zorder=3, edgecolors="black", linewidths=0.5)
+    for x, y, name in zip(eccs, gaps, names):
+        ax.annotate(name, (x, y), textcoords="offset points", xytext=(6, 4), fontsize=8)
+    ax.axhline(0, color="black", linewidth=0.8, linestyle="--", alpha=0.5)
+
+    # Fit a linear trend
+    if len(eccs) >= 3:
+        z = np.polyfit(eccs, gaps, 1)
+        xfit = np.linspace(min(eccs), max(eccs), 100)
+        ax.plot(xfit, np.polyval(z, xfit), color="#7f8c8d", linewidth=1.5,
+                linestyle="--", label=f"trend  slope={z[0]:+.2f} km/s per unit e")
+        ax.legend(fontsize=8)
+
+    ax.set_xlabel("Destination body eccentricity (e)", fontsize=10)
+    ax.set_ylabel("ΔV gap: baseline − proposed (km/s)", fontsize=10)
+    ax.set_title("Eccentricity vs. Initialization Improvement\n"
+                 "Green = proposed better, Red = baseline better", fontsize=10)
+    ax.grid(linestyle="--", alpha=0.4)
+
+    # ── Right: baseline vs proposed ΔV grouped by body ────────────────────────
+    ax2 = axes[1]
+    x = np.arange(len(ecc_gap_data))
+    width = 0.35
+    ax2.bar(x - width/2, dvp, width, label="Baseline", color="#3498db", alpha=0.85,
+            edgecolor="black", linewidth=0.5)
+    ax2.bar(x + width/2, dvo, width, label="Proposed", color="#e74c3c", alpha=0.85,
+            edgecolor="black", linewidth=0.5)
+
+    # Annotate eccentricity above each group
+    for xi, row in zip(x, ecc_gap_data):
+        ax2.text(xi, max(row["dv_paper"], row["dv_proposed"]) + 0.2,
+                 f"e={row['ecc']:.2f}", ha="center", va="bottom", fontsize=7, color="#555")
+
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(names, fontsize=9)
+    ax2.set_ylabel("ΔV for Earth → body (km/s)", fontsize=10)
+    ax2.set_xlabel("Destination body (sorted by eccentricity)", fontsize=10)
+    ax2.set_title("Earth → Body ΔV: Baseline vs. Proposed\n"
+                  "Sorted by destination eccentricity", fontsize=10)
+    ax2.legend(fontsize=9)
+    ax2.grid(axis="y", linestyle="--", alpha=0.4)
+
+    fig.suptitle("Exp 1b: Eccentricity Handling — Does Proposed Init Improve More for Eccentric Bodies?",
+                 fontsize=11, fontweight="bold")
+    fig.tight_layout()
+    save_figure(fig, results_dir / "exp1_eccentricity_gap.png")
 
 
 # ── Experiment 2 ──────────────────────────────────────────────────────────────
@@ -513,7 +616,7 @@ def write_summary(results1: dict, results2: dict, results_dir: pathlib.Path) -> 
         f"|--------|-------|",
         f"| Arcs compared | {r1.get('n_arcs_compared', 'N/A')} |",
         f"| Mean ΔV diff (proposed − paper) | {r1.get('mean_dv_diff', float('nan')):+.3f} km/s |",
-        f"| Max \|ΔV diff\| | {r1.get('max_dv_diff', float('nan')):.3f} km/s |",
+        f"| Max |ΔV diff| | {r1.get('max_dv_diff', float('nan')):.3f} km/s |",
         f"| % arcs improved by proposed | {r1.get('pct_improved', float('nan')):.1f}% |",
         f"| % arcs where paper was better | {100 - r1.get('pct_improved', 0):.1f}% |",
         f"| Rank changes across destinations | {r1.get('rank_changes', 'N/A')} |",
@@ -531,6 +634,19 @@ def write_summary(results1: dict, results2: dict, results_dir: pathlib.Path) -> 
             )
         else:
             lines.append(f"| {arc['arc']} | N/A | N/A | N/A |")
+
+    lines += [
+        "",
+        "### Eccentricity gap (Earth → body arcs, sorted by eccentricity)",
+        "",
+        "| Body | Eccentricity | Baseline ΔV (km/s) | Proposed ΔV (km/s) | Gap (B−P, km/s) |",
+        "|------|-------------|-------------------|-------------------|-----------------|",
+    ]
+    for row in r1.get("ecc_gap_data", []):
+        lines.append(
+            f"| {row['body']} | {row['ecc']:.3f} | {row['dv_paper']:.3f} "
+            f"| {row['dv_proposed']:.3f} | {row['gap']:+.3f} |"
+        )
 
     lines += [
         "",
@@ -582,6 +698,7 @@ def write_summary(results1: dict, results2: dict, results_dir: pathlib.Path) -> 
         "|------|-------------|",
         "| `exp1_dv_heatmap.png` | Heatmap of ΔV differences (proposed − baseline) per body pair |",
         "| `exp1_summary_table.png` | Summary metrics table for Exp 1 |",
+        "| `exp1_eccentricity_gap.png` | ΔV gap vs. destination eccentricity (Exp 1b) |",
         "| `exp2_timeline.png` | Mission timeline comparison (horizontal bar chart) |",
         "| `exp2_leg_table.png` | Per-leg parameter table for Exp 2 |",
         "",
@@ -611,6 +728,7 @@ def main():
     expected = [
         RESULTS_DIR / "exp1_dv_heatmap.png",
         RESULTS_DIR / "exp1_summary_table.png",
+        RESULTS_DIR / "exp1_eccentricity_gap.png",
         RESULTS_DIR / "exp2_timeline.png",
         RESULTS_DIR / "exp2_leg_table.png",
         RESULTS_DIR / "results_summary.md",

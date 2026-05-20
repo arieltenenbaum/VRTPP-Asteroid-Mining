@@ -1,5 +1,5 @@
 # Verification Suite Results
-_Generated: 2026-05-20 13:27_
+_Generated: 2026-05-20 13:32_
 
 ---
 
@@ -26,6 +26,18 @@ Initialization strategy: **Baseline** = single Hohmann seed at T_d=0;
 | Earth → 1996 FG3 | 6.609 | 6.686 | +0.077 |
 | 1996 FG3 → 101955 Bennu | 7.261 | 7.790 | +0.529 |
 | 101955 Bennu → Earth | 11.106 | 11.378 | +0.273 |
+
+### Eccentricity gap (Earth → body arcs, sorted by eccentricity)
+
+| Body | Eccentricity | Baseline ΔV (km/s) | Proposed ΔV (km/s) | Gap (B−P, km/s) |
+|------|-------------|-------------------|-------------------|-----------------|
+| 101955 Bennu | 0.020 | 9.423 | 10.633 | -1.210 |
+| 1989 ML | 0.137 | 10.567 | 8.346 | +2.221 |
+| 162173 Ryugu | 0.191 | 5.294 | 6.629 | -1.335 |
+| 2001 CC21 | 0.219 | 10.480 | 5.341 | +5.140 |
+| 1943 Anteros | 0.256 | 6.281 | 5.822 | +0.459 |
+| 1996 FG3 | 0.350 | 6.609 | 6.686 | -0.077 |
+| 2001 SG10 | 0.425 | 22.860 | 8.521 | +14.339 |
 
 ---
 
@@ -61,5 +73,6 @@ Each leg is cold-started (T_t_prev=None), invoking each model's own init logic.
 |------|-------------|
 | `exp1_dv_heatmap.png` | Heatmap of ΔV differences (proposed − baseline) per body pair |
 | `exp1_summary_table.png` | Summary metrics table for Exp 1 |
+| `exp1_eccentricity_gap.png` | ΔV gap vs. destination eccentricity (Exp 1b) |
 | `exp2_timeline.png` | Mission timeline comparison (horizontal bar chart) |
 | `exp2_leg_table.png` | Per-leg parameter table for Exp 2 |
