@@ -73,7 +73,7 @@ Determine whether the proposed initialization's seed structure — 16 T_d candid
 | Transfer time per leg | Which trajectory arc each method finds |
 | Δv per leg | Cost at the found local optimum |
 | Seed coverage fraction | % of the 64 evaluated (T_d, T_t) pairs within 20% of the porkchop global minimum |
-| Baseline seed coverage | Same metric for the Hohmann seeds (T_d=0, T_t ∈ {T_t_hoh, 2×T_t_hoh}) |
+| Baseline seed coverage | Same metric for the Hohmann seed (T_d=0, T_t = T_t_hoh) |
 
 ### Output
 - Per-leg trajectory parameters table (`exp2_leg_table.png`)
