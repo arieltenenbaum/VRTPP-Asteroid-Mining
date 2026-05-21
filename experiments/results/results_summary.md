@@ -6,7 +6,7 @@ _Generated: 2026-05-20 13:32_
 ## Experiment 1: Arc-Cost Matrix Comparison
 
 Initialization strategy: **Baseline** = single Hohmann seed at T_d=0;  
-**Proposed** = TA-grid (16 true-anomaly samples) + distance-corrected T_t seeds.
+**Proposed** = TA-grid (16 true-anomaly T_d candidates) × 4 T_t seeds per candidate [0.5×T_t_hoh, T_t_hoh, T_t_ecc (distance-corrected), 2×T_t_hoh], L-BFGS-B refinement from best of up to 64 evaluations.
 
 ### Summary metrics
 

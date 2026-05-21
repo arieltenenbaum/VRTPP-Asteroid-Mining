@@ -4,7 +4,7 @@
 
 This study evaluates a physics-informed, multi-start initialization strategy for Lambert-based trajectory optimization within the Vehicle Routing and Trajectory Problem with Profits and Partial Refueling (VRTPP-PR) framework.
 
-The core physics insight is that departure Δv is sensitive to *where in the orbit* a spacecraft departs — its orbital phase angle — not just the calendar date. For eccentric orbits, low-cost departure windows cluster near periapsis and are non-uniformly distributed in time. The proposed TA-grid addresses this by sampling 16 uniform true-anomaly positions across the feasible departure window, ensuring coverage of phase-dependent Δv structure that a time-uniform Hohmann seed misses.
+The core physics insight is that departure Δv is sensitive to *where in the orbit* a spacecraft departs — its orbital phase angle — not just the calendar date. For eccentric orbits, low-cost departure windows cluster near periapsis and are non-uniformly distributed in time. The proposed initialization addresses this on two axes: (1) **T_d** is sampled at 16 uniform true-anomaly positions (0°–337.5°) of the departure body, covering the full orbital phase rather than uniform calendar time; (2) for each T_d candidate, **four T_t seeds** are evaluated — 0.5×T_t_hoh (fast), T_t_hoh (circular Hohmann), T_t_ecc (distance-corrected using the actual heliocentric departure distance), and 2×T_t_hoh (slow) — covering the range of physically plausible transfer durations. The best of up to 64 evaluations seeds an L-BFGS-B refinement.
 
 The goal is to quantify how much initialization choice affects **arc-cost accuracy, routing decisions, and mission-level outcomes** in asteroid mining logistics — specifically, the extent of its impact within the VRTPP-PR coupled MILP-NLP framework — and to demonstrate that the TA-grid's coverage is geometrically interpretable in terms of orbital mechanics.
 
@@ -30,7 +30,7 @@ Quantify how much initialization changes the **Δv / mass-ratio matrix** used by
 ### Method
 - Compute arc costs using:
   - Baseline model (`VRTPP-PaperModel.ipynb`, `main` branch — single Hohmann seed at T_d=0)
-  - Proposed model (`VRTPP_PR_Optimization.ipynb`, `periapsis-init` branch — TA-grid + distance-corrected T_t seeds)
+  - Proposed model (`VRTPP_PR_Optimization.ipynb`, `periapsis-init` branch — 16 TA-grid T_d candidates × 4 T_t seeds [0.5×, 1×, distance-corrected, 2× Hohmann], L-BFGS-B refinement)
 - Use identical asteroid sets and mission parameters
 
 ### Metrics
