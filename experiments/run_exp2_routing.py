@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 
 ROOT      = pathlib.Path(__file__).resolve().parent.parent
 NB_TA     = ROOT / 'VRTPP_PR_Optimization.ipynb'    # TA-grid (periapsis-init)
-NB_PAPER  = ROOT / 'VRTPP-PaperModel.ipynb'         # Paper model (main)
+NB_PAPER  = ROOT / 'VRTPP-PaperModel.ipynb'  # Paper model — loaded from main branch below
 OUT_DIR   = ROOT / 'experiments' / 'results'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -56,9 +56,19 @@ print("Loading TA-grid model definitions (periapsis-init)...")
 ns_ta = load_cells(NB_TA, [2, 4, 5, 7, 9, 11, 12, 14, 18, 20, 21])
 print("  OK")
 
-print("Loading paper model initialize_mass_ratios...")
+print("Loading paper model initialize_mass_ratios (from main branch)...")
+# Always use VRTPP-PaperModel.ipynb from origin/main — canonical per Notebook Sync Policy
+import subprocess
+result = subprocess.run(
+    ['git', 'show', 'origin/main:VRTPP-PaperModel.ipynb'],
+    capture_output=True, text=True, cwd=str(ROOT)
+)
+if result.returncode != 0:
+    print(f"ERROR: could not fetch VRTPP-PaperModel.ipynb from origin/main: {result.stderr}")
+    sys.exit(1)
+nb_paper = json.loads(result.stdout)
+print("  Using origin/main:VRTPP-PaperModel.ipynb")
 # Reuse TA-grid ns for shared definitions; only override initialize_mass_ratios
-nb_paper = json.loads(pathlib.Path(NB_PAPER).read_text())
 paper_init_src = ''.join(nb_paper['cells'][23]['source'])
 ns_paper_init = dict(ns_ta)  # copy all TA-grid definitions
 exec(compile(paper_init_src, '<paper_init>', 'exec'), ns_paper_init)
